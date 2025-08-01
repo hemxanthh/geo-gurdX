@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Menu, Bell, Settings, User, LogOut, Shield, Crown } from 'lucide-react';
+import { Menu, Settings, User, LogOut, Shield, Crown } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSocket } from '../../contexts/SocketContext';
 import { clsx } from 'clsx';
@@ -11,11 +11,8 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ onMenuClick, onPageChange }) => {
   const { user, profile, logout } = useAuth();
-  const { alerts, connected } = useSocket();
+  const { connected } = useSocket();
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
-
-  const unreadAlerts = alerts.filter(alert => !alert.isRead).length;
 
   const handleLogout = async () => {
     console.log('Header: Logout button clicked');
@@ -67,57 +64,6 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, onPageChange }) => {
             <span className="text-sm text-gray-600 hidden sm:inline">
               {connected ? 'Connected' : 'Disconnected'}
             </span>
-          </div>
-
-          {/* Notifications */}
-          <div className="relative">
-            <button
-              onClick={() => setShowNotifications(!showNotifications)}
-              className="relative p-2 rounded-lg hover:bg-gray-100 transition-colors"
-            >
-              <Bell className="w-6 h-6 text-gray-600" />
-              {unreadAlerts > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                  {unreadAlerts > 9 ? '9+' : unreadAlerts}
-                </span>
-              )}
-            </button>
-
-            {/* Notifications Dropdown */}
-            {showNotifications && (
-              <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-lg border border-gray-200 z-50">
-                <div className="p-4 border-b border-gray-200">
-                  <h3 className="font-semibold text-gray-900">Notifications</h3>
-                  <p className="text-sm text-gray-500">{unreadAlerts} unread alerts</p>
-                </div>
-                <div className="max-h-80 overflow-y-auto">
-                  {alerts.slice(0, 5).map((alert) => (
-                    <div key={alert.id} className="p-4 border-b border-gray-100 hover:bg-gray-50">
-                      <div className="flex items-start space-x-3">
-                        <div className={clsx(
-                          'w-2 h-2 rounded-full mt-2',
-                          alert.severity === 'critical' ? 'bg-red-500' :
-                          alert.severity === 'high' ? 'bg-orange-500' :
-                          alert.severity === 'medium' ? 'bg-yellow-500' : 'bg-blue-500'
-                        )}></div>
-                        <div className="flex-1">
-                          <p className="font-medium text-gray-900">{alert.message}</p>
-                          <p className="text-sm text-gray-500 mt-1">
-                            {alert.timestamp.toLocaleTimeString()}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                {alerts.length === 0 && (
-                  <div className="p-8 text-center text-gray-500">
-                    <Bell className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                    <p>No notifications</p>
-                  </div>
-                )}
-              </div>
-            )}
           </div>
 
           {/* Settings */}
@@ -177,12 +123,11 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, onPageChange }) => {
       </div>
 
       {/* Close dropdowns when clicking outside */}
-      {(showUserMenu || showNotifications) && (
+      {showUserMenu && (
         <div
           className="fixed inset-0 z-40"
           onClick={() => {
             setShowUserMenu(false);
-            setShowNotifications(false);
           }}
         />
       )}

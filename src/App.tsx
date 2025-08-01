@@ -9,8 +9,6 @@ import Dashboard from './components/Dashboard/Dashboard';
 import AdminDashboard from './components/Admin/AdminDashboard';
 import LiveMap from './components/Map/LiveMap';
 import TripHistory from './components/Trips/TripHistory';
-import AlertsPanel from './components/Alerts/AlertsPanel';
-import RemoteControl from './components/Remote/RemoteControl';
 import Settings from './components/Settings/Settings';
 
 const App: React.FC = () => {
@@ -54,10 +52,6 @@ const App: React.FC = () => {
         return <LiveMap />;
       case 'trips':
         return <TripHistory />;
-      case 'alerts':
-        return <AlertsPanel />;
-      case 'remote':
-        return <RemoteControl />;
       case 'settings':
         return <Settings />;
       default:
