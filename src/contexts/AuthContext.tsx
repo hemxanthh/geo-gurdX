@@ -52,12 +52,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state change:', event, session?.user?.email);
+      
+      if (event === 'SIGNED_OUT') {
+        console.log('User signed out, clearing all state...');
+        setSession(null);
+        setUser(null);
+        setProfile(null);
+        setIsLoading(false);
+        return;
+      }
+      
       setSession(session);
       setUser(session?.user ?? null);
       
       if (session?.user) {
         await loadUserProfile(session.user.id);
       } else {
+        console.log('User logged out, clearing profile...');
         setProfile(null);
         setIsLoading(false);
       }
@@ -188,12 +200,39 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const logout = async () => {
-    setIsLoading(true);
-    await supabase.auth.signOut();
-    setUser(null);
-    setProfile(null);
-    setSession(null);
-    setIsLoading(false);
+    try {
+      console.log('Starting logout process...');
+      setIsLoading(true);
+      
+      // Clear local storage session data
+      localStorage.removeItem('supabase.auth.token');
+      sessionStorage.removeItem('supabase.auth.token');
+      
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        console.error('Logout error:', error);
+        throw error;
+      }
+      
+      console.log('Supabase signOut successful, clearing local state...');
+      
+      // Clear local state
+      setUser(null);
+      setProfile(null);
+      setSession(null);
+      
+      console.log('Logout completed successfully');
+      
+      // Force a page refresh to ensure clean state
+      setTimeout(() => {
+        window.location.reload();
+      }, 100);
+    } catch (error: any) {
+      console.error('Logout failed:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const updateProfile = async (updates: Partial<Profile>): Promise<{ success: boolean; error?: string }> => {

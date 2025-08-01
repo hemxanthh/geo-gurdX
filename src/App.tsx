@@ -19,7 +19,10 @@ const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [showRegister, setShowRegister] = useState(false);
 
+  console.log('App render:', { user: user?.email, profile: profile?.username, isLoading });
+
   if (isLoading) {
+    console.log('App: Showing loading screen');
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -31,12 +34,15 @@ const App: React.FC = () => {
   }
 
   if (!user) {
+    console.log('App: No user, showing auth forms');
     return showRegister ? (
       <RegistrationForm onSwitchToLogin={() => setShowRegister(false)} />
     ) : (
       <LoginForm onSwitchToRegister={() => setShowRegister(true)} />
     );
   }
+
+  console.log('App: User authenticated, showing main app');
 
   const renderCurrentPage = () => {
     switch (currentPage) {

@@ -43,12 +43,17 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
   const { user, profile } = useAuth();
 
   useEffect(() => {
+    console.log('SocketContext: User/Profile changed', { user: user?.email, profile: profile?.username });
+    
     if (user && profile) {
+      console.log('SocketContext: Initializing subscriptions...');
       initializeRealtimeSubscriptions();
       loadInitialData();
     } else {
+      console.log('SocketContext: Cleaning up subscriptions...');
       // Cleanup subscriptions when user logs out
       channels.forEach(channel => {
+        console.log('SocketContext: Removing channel', channel);
         supabase.removeChannel(channel);
       });
       setChannels([]);
@@ -59,6 +64,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
     }
 
     return () => {
+      console.log('SocketContext: Cleanup effect running...');
       channels.forEach(channel => {
         supabase.removeChannel(channel);
       });

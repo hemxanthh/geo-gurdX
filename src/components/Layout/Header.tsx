@@ -10,12 +10,22 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ onMenuClick, onPageChange }) => {
-  const { user, logout } = useAuth();
+  const { user, profile, logout } = useAuth();
   const { alerts, connected } = useSocket();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
 
   const unreadAlerts = alerts.filter(alert => !alert.isRead).length;
+
+  const handleLogout = async () => {
+    console.log('Header: Logout button clicked');
+    try {
+      await logout();
+      console.log('Header: Logout completed');
+    } catch (error) {
+      console.error('Header: Logout failed', error);
+    }
+  };
 
   const handleAdminAccess = () => {
     if (onPageChange) {
@@ -125,7 +135,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, onPageChange }) => {
                 <User className="w-5 h-5 text-white" />
               </div>
               <span className="hidden sm:inline font-medium text-gray-900">
-                {user?.username}
+                {profile?.username}
               </span>
             </button>
 
@@ -133,9 +143,9 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, onPageChange }) => {
             {showUserMenu && (
               <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-200 z-50">
                 <div className="p-3 border-b border-gray-100">
-                  <p className="font-medium text-gray-900">{user?.username}</p>
-                  <p className="text-sm text-gray-500">{user?.email}</p>
-                  {user?.role === 'admin' && (
+                  <p className="font-medium text-gray-900">{profile?.username}</p>
+                  <p className="text-sm text-gray-500">{profile?.email}</p>
+                  {profile?.role === 'admin' && (
                     <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 mt-1">
                       <Crown className="w-3 h-3 mr-1" />
                       Administrator
@@ -143,7 +153,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, onPageChange }) => {
                   )}
                 </div>
                 <div className="p-2 space-y-1">
-                  {user?.role === 'admin' && (
+                  {profile?.role === 'admin' && (
                     <button
                       onClick={handleAdminAccess}
                       className="w-full flex items-center space-x-2 px-3 py-2 text-left rounded-lg hover:bg-gray-50 text-purple-600 transition-colors"
@@ -153,7 +163,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, onPageChange }) => {
                     </button>
                   )}
                   <button
-                    onClick={logout}
+                    onClick={handleLogout}
                     className="w-full flex items-center space-x-2 px-3 py-2 text-left rounded-lg hover:bg-gray-50 text-red-600 transition-colors"
                   >
                     <LogOut className="w-4 h-4" />
