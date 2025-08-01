@@ -17,7 +17,7 @@ export default defineConfig({
         manualChunks: {
           vendor: ['react', 'react-dom'],
           utils: ['lucide-react', 'clsx'],
-          supabase: ['@supabase/supabase-js', '@supabase/auth-helpers-react'],
+          supabase: ['@supabase/supabase-js'],
           maps: ['leaflet', 'react-leaflet']
         }
       }
