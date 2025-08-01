@@ -1,11 +1,10 @@
-// project/src/components/Auth/LoginForm.tsx
 import React, { useState } from 'react';
 import { Shield, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { clsx } from 'clsx';
 
 const LoginForm: React.FC<{ onSwitchToRegister: () => void }> = ({ onSwitchToRegister }) => {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
@@ -15,27 +14,12 @@ const LoginForm: React.FC<{ onSwitchToRegister: () => void }> = ({ onSwitchToReg
     e.preventDefault();
     setError('');
     
-    console.log('=== FORM SUBMIT ===');
-    console.log('Form username:', `"${username}"`);
-    console.log('Form password:', `"${password}"`);
-
-    const result = await login(username, password);
-    console.log('Login result:', result);
-    if (!result.success) {
-  if (result.error?.toLowerCase().includes('password')) {
-    setError('Password is incorrect. Try again.');
-  } else {
-    setError(result.error || 'Login failed');
-  }
-}
-
+    const result = await login(email, password);
     
     if (!result.success) {
-      console.error('Setting error:', result.error);
       setError(result.error || 'Login failed');
     }
   };
-
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 flex items-center justify-center p-4">
@@ -46,25 +30,24 @@ const LoginForm: React.FC<{ onSwitchToRegister: () => void }> = ({ onSwitchToReg
             <Shield className="w-8 h-8 text-blue-600" />
           </div>
           <h1 className="text-3xl font-bold text-white mb-2">Geo Guard-X</h1>
-          <h1 className="text-3xl font-bold text-white mb-2">your vehicle will be safe !</h1>
           <p className="text-blue-100">Advanced Vehicle Management & Security</p>
         </div>
 
         {/* Login Form */}
         <div className="bg-white rounded-2xl shadow-2xl p-8">
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Username */}
+            {/* Email */}
             <div>
-              <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
-                Username
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                Email Address
               </label>
               <input
-                id="username"
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none transition-all"
-                placeholder="Enter your username"
+                placeholder="Enter your email"
                 required
                 disabled={isLoading}
               />
@@ -123,14 +106,10 @@ const LoginForm: React.FC<{ onSwitchToRegister: () => void }> = ({ onSwitchToReg
 
           {/* Demo Credentials */}
           <div className="mt-6 pt-6 border-t border-gray-200">
-         
-            <div className="flex space-x-2">
-             
-            </div>
-            <div className="mt-4 text-center">
-                <button onClick={onSwitchToRegister} className="text-sm text-blue-600 hover:underline">
-                    Create an account
-                </button>
+            <div className="text-center">
+              <button onClick={onSwitchToRegister} className="text-sm text-blue-600 hover:underline">
+                Don't have an account? Create one
+              </button>
             </div>
           </div>
         </div>

@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useSocket } from '../../contexts/SocketContext';
+import { useAuth } from '../../contexts/AuthContext';
+import { useTrips } from '../../hooks/useTrips';
+import { supabase } from '../../lib/supabase';
 import clsx from 'clsx';
 import { 
   Car, 
@@ -55,7 +58,10 @@ const isVehicleIgnitionOn = (vehicle: any) => {
 };
 
 export default function Dashboard({ onPageChange, onTripCompleted }: DashboardProps) {
-  const { vehicleStatus } = useSocket();
+  const { vehicleStatus, sendCommand } = useSocket();
+  const { user } = useAuth();
+  const { trips } = useTrips();
+  
   // Get the first vehicle from vehicleStatus (assuming single vehicle for now)
   const currentVehicle = Object.values(vehicleStatus)[0] || null;
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -80,43 +86,24 @@ export default function Dashboard({ onPageChange, onTripCompleted }: DashboardPr
     return () => clearInterval(timer);
   }, []);
 
-  // Load trip statistics with error handling
+  // Calculate stats from trips
   useEffect(() => {
-    const loadStats = async () => {
-      try {
-        const response = await fetch('http://localhost:3001/trips');
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const trips = await response.json();
-        
-        if (Array.isArray(trips) && trips.length > 0) {
-          const totalDistance = trips.reduce((sum: number, trip: any) => sum + (trip.distance || 0), 0);
-          const totalDuration = trips.reduce((sum: number, trip: any) => sum + (trip.duration || 0), 0);
-          const avgSpeed = totalDistance > 0 && totalDuration > 0 ? (totalDistance / (totalDuration / 3600)) : 0;
-          
-          const hours = Math.floor(totalDuration / 3600);
-          const minutes = Math.floor((totalDuration % 3600) / 60);
-          
-          setStats({
-            totalTrips: trips.length,
-            totalDistance,
-            totalTime: `${hours}h ${minutes}m`,
-            avgSpeed
-          });
-        }
-      } catch (error) {
-        console.error('Error loading stats:', error);
-        setNotifications(prev => [
-          { id: Date.now(), message: "Failed to load trip statistics", time: "Just now", type: "warning" },
-          ...prev.slice(0, 4)
-        ]);
-      }
-    };
-
-    loadStats();
-  }, []);
+    if (trips.length > 0) {
+      const totalDistance = trips.reduce((sum, trip) => sum + (trip.distance || 0), 0);
+      const totalDuration = trips.reduce((sum, trip) => sum + (trip.duration || 0), 0);
+      const avgSpeed = totalDistance > 0 && totalDuration > 0 ? (totalDistance / (totalDuration / 3600)) : 0;
+      
+      const hours = Math.floor(totalDuration / 3600);
+      const minutes = Math.floor((totalDuration % 3600) / 60);
+      
+      setStats({
+        totalTrips: trips.length,
+        totalDistance,
+        totalTime: `${hours}h ${minutes}m`,
+        avgSpeed
+      });
+    }
+  }, [trips]);
 
   const handleToggleIgnition = async () => {
     try {
@@ -125,34 +112,31 @@ export default function Dashboard({ onPageChange, onTripCompleted }: DashboardPr
         ...prev.slice(0, 4)
       ]);
 
-      const response = await fetch('http://localhost:3001/toggle-ignition', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      // Get the first vehicle ID (in a real app, you'd select the specific vehicle)
+      const vehicleId = Object.keys(vehicleStatus)[0];
+      if (!vehicleId) {
+        throw new Error('No vehicle found');
       }
+
+      const success = await sendCommand(vehicleId, isVehicleIgnitionOn(currentVehicle) ? 'lock_engine' : 'unlock_engine');
       
-      const result = await response.json();
-      console.log('Ignition toggle result:', result);
+      if (success) {
+        setNotifications(prev => [
+          { 
+            id: Date.now(), 
+            message: `Engine ${isVehicleIgnitionOn(currentVehicle) ? 'locked' : 'unlocked'} successfully`, 
+            time: "Just now", 
+            type: "success" 
+          },
+          ...prev.slice(1, 4)
+        ]);
 
-      // Show success notification
-      setNotifications(prev => [
-        { 
-          id: Date.now(), 
-          message: result.message || "Ignition toggled successfully", 
-          time: "Just now", 
-          type: "success" 
-        },
-        ...prev.slice(1, 4) // Remove the "processing" message
-      ]);
-
-      // Call trip completed callback when ignition is turned off
-      if (currentVehicle && isVehicleIgnitionOn(currentVehicle) && !result.ignitionOn) {
-        onTripCompleted?.();
+        // Call trip completed callback when ignition is turned off
+        if (currentVehicle && isVehicleIgnitionOn(currentVehicle)) {
+          onTripCompleted?.();
+        }
+      } else {
+        throw new Error('Command failed');
       }
     } catch (error) {
       console.error("Error toggling ignition:", error);
@@ -163,17 +147,32 @@ export default function Dashboard({ onPageChange, onTripCompleted }: DashboardPr
           time: "Just now", 
           type: "error" 
         },
-        ...prev.slice(1, 4) // Remove the "processing" message
+        ...prev.slice(1, 4)
       ]);
     }
   };
 
-  const handleRemoteUnlock = () => {
-    console.log("Remote unlock button pressed");
-    setNotifications(prev => [
-      { id: Date.now(), message: "Remote unlock command sent", time: "Just now", type: "info" },
-      ...prev.slice(0, 4)
-    ]);
+  const handleRemoteUnlock = async () => {
+    try {
+      const vehicleId = Object.keys(vehicleStatus)[0];
+      if (!vehicleId) {
+        throw new Error('No vehicle found');
+      }
+
+      const success = await sendCommand(vehicleId, 'lights');
+      
+      setNotifications(prev => [
+        { 
+          id: Date.now(), 
+          message: success ? "Remote unlock command sent" : "Failed to send unlock command", 
+          time: "Just now", 
+          type: success ? "info" : "error" 
+        },
+        ...prev.slice(0, 4)
+      ]);
+    } catch (error) {
+      console.error("Error sending unlock command:", error);
+    }
   };
 
   const handleGoToLiveMap = () => {
@@ -275,7 +274,7 @@ export default function Dashboard({ onPageChange, onTripCompleted }: DashboardPr
               </div>
               <div>
                 <h3 className="font-semibold text-gray-900">Total Distance</h3>
-                <p className="text-sm text-gray-500">Today</p>
+                <p className="text-sm text-gray-500">All time</p>
               </div>
             </div>
           </div>
@@ -519,7 +518,7 @@ export default function Dashboard({ onPageChange, onTripCompleted }: DashboardPr
               <Car className="w-6 h-6 text-indigo-600" />
             </div>
             <div>
-              <h3 className="font-semibold text-gray-900">Today's Summary</h3>
+              <h3 className="font-semibold text-gray-900">Trip Summary</h3>
               <p className="text-sm text-gray-500">Vehicle activity overview</p>
             </div>
           </div>
