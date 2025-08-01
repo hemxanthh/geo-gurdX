@@ -19,13 +19,14 @@ const App: React.FC = () => {
 
   console.log('App render:', { user: user?.email, profile: profile?.username, isLoading });
 
+  // Show a minimal loading state only for initial load
   if (isLoading) {
     console.log('App: Showing loading screen');
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent border-solid rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading Geo Guard-X...</p>
+          <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent border-solid rounded-full animate-spin mx-auto mb-2"></div>
+          <p className="text-gray-500 text-sm">Loading...</p>
         </div>
       </div>
     );
@@ -33,10 +34,14 @@ const App: React.FC = () => {
 
   if (!user) {
     console.log('App: No user, showing auth forms');
-    return showRegister ? (
-      <RegistrationForm onSwitchToLogin={() => setShowRegister(false)} />
-    ) : (
-      <LoginForm onSwitchToRegister={() => setShowRegister(true)} />
+    return (
+      <div className="fade-in">
+        {showRegister ? (
+          <RegistrationForm onSwitchToLogin={() => setShowRegister(false)} />
+        ) : (
+          <LoginForm onSwitchToRegister={() => setShowRegister(true)} />
+        )}
+      </div>
     );
   }
 

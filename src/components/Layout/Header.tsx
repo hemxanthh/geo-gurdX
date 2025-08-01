@@ -13,14 +13,18 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, onPageChange }) => {
   const { user, profile, logout } = useAuth();
   const { connected } = useSocket();
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const handleLogout = async () => {
     console.log('Header: Logout button clicked');
+    setIsLoggingOut(true);
     try {
       await logout();
       console.log('Header: Logout completed');
     } catch (error) {
       console.error('Header: Logout failed', error);
+    } finally {
+      setIsLoggingOut(false);
     }
   };
 
@@ -110,10 +114,19 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, onPageChange }) => {
                   )}
                   <button
                     onClick={handleLogout}
-                    className="w-full flex items-center space-x-2 px-3 py-2 text-left rounded-lg hover:bg-gray-50 text-red-600 transition-colors"
+                    disabled={isLoggingOut}
+                    className={`w-full flex items-center space-x-2 px-3 py-2 text-left rounded-lg transition-colors ${
+                      isLoggingOut 
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                        : 'hover:bg-gray-50 text-red-600'
+                    }`}
                   >
-                    <LogOut className="w-4 h-4" />
-                    <span>Sign Out</span>
+                    {isLoggingOut ? (
+                      <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <LogOut className="w-4 h-4" />
+                    )}
+                    <span>{isLoggingOut ? 'Signing out...' : 'Sign Out'}</span>
                   </button>
                 </div>
               </div>

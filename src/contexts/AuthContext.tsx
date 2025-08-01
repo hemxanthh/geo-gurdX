@@ -45,7 +45,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         console.warn('Auth initialization timed out, setting loading to false');
         setIsLoading(false);
       }
-    }, 10000); // 10 second timeout
+    }, 5000); // 5 second timeout
 
     const initializeAuth = async () => {
       try {
@@ -236,34 +236,33 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = async () => {
     try {
       console.log('Starting logout process...');
-      setIsLoading(true);
       
-      // Clear local storage session data
-      localStorage.removeItem('supabase.auth.token');
-      sessionStorage.removeItem('supabase.auth.token');
-      
-      const { error } = await supabase.auth.signOut();
-      
-      if (error) {
-        console.error('Logout error:', error);
-        throw error;
-      }
-      
-      console.log('Supabase signOut successful, clearing local state...');
-      
-      // Clear local state
+      // Immediately clear state for faster UI response
       setUser(null);
       setProfile(null);
       setSession(null);
       
+      // Clear storage
+      try {
+        localStorage.removeItem('supabase.auth.token');
+        sessionStorage.removeItem('supabase.auth.token');
+      } catch (e) {
+        console.warn('Could not clear storage:', e);
+      }
+      
+      // Sign out from Supabase in background
+      supabase.auth.signOut().catch(error => {
+        console.error('Logout error:', error);
+      });
+      
       console.log('Logout completed successfully');
       
-      // Force a page refresh to ensure clean state
-      setTimeout(() => {
-        window.location.reload();
-      }, 100);
     } catch (error: any) {
       console.error('Logout failed:', error);
+      // Even if logout fails, clear local state
+      setUser(null);
+      setProfile(null);
+      setSession(null);
     } finally {
       setIsLoading(false);
     }

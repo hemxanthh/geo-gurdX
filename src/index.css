@@ -29,3 +29,38 @@
 .leaflet-tile-pane {
   background: #f8fafc;
 }
+
+/* Smooth transitions */
+.fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Reduce layout shift */
+.min-h-screen {
+  transition: all 0.2s ease-in-out;
+}
+
+/* Fast loading spinner */
+.spinner-fast {
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
