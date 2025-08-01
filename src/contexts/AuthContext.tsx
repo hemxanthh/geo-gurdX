@@ -37,16 +37,52 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        loadUserProfile(session.user.id);
-      } else {
+    let mounted = true;
+    
+    // Safety timeout to prevent infinite loading
+    const loadingTimeout = setTimeout(() => {
+      if (mounted && isLoading) {
+        console.warn('Auth initialization timed out, setting loading to false');
         setIsLoading(false);
       }
-    });
+    }, 10000); // 10 second timeout
+
+    const initializeAuth = async () => {
+      try {
+        console.log('Initializing auth...');
+        
+        // Get initial session
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Error getting session:', error);
+          if (mounted) {
+            setIsLoading(false);
+          }
+          return;
+        }
+
+        console.log('Initial session:', session?.user?.email || 'No session');
+        
+        if (mounted) {
+          setSession(session);
+          setUser(session?.user ?? null);
+          
+          if (session?.user) {
+            await loadUserProfile(session.user.id);
+          } else {
+            setIsLoading(false);
+          }
+        }
+      } catch (error) {
+        console.error('Error initializing auth:', error);
+        if (mounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    initializeAuth();
 
     // Listen for auth changes
     const {
@@ -54,6 +90,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('Auth state change:', event, session?.user?.email);
       
+      if (!mounted) return;
+
       if (event === 'SIGNED_OUT') {
         console.log('User signed out, clearing all state...');
         setSession(null);
@@ -75,62 +113,58 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      clearTimeout(loadingTimeout);
+      subscription.unsubscribe();
+    };
   }, []);
 
   const loadUserProfile = async (userId: string) => {
     try {
       console.log('Loading profile for user:', userId);
+      setIsLoading(true);
       
-      // Try to load profile with retry logic for newly registered users
-      let profile = null;
-      let retries = 0;
-      const maxRetries = 3;
-      
-      while (retries < maxRetries) {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', userId)
-          .single();
+      // First attempt to load profile
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
 
-        if (error) {
-          console.error(`Error loading profile (attempt ${retries + 1}):`, error);
-          
-          // If profile doesn't exist yet (for newly registered users), wait and retry
-          if (error.code === 'PGRST116') {
-            retries++;
-            if (retries < maxRetries) {
-              console.log(`Profile not found, retrying in ${retries * 1000}ms...`);
-              await new Promise(resolve => setTimeout(resolve, retries * 1000));
-              continue;
-            } else {
-              // Final attempt: try to create profile manually
-              console.log('Attempting to create profile manually...');
-              const user = await supabase.auth.getUser();
-              if (user.data.user) {
-                const username = user.data.user.user_metadata?.username || 
-                               user.data.user.email?.split('@')[0] || 
-                               'user';
-                profile = await ensureProfileExists(userId, username, user.data.user.email || '');
-                if (profile) {
-                  console.log('Profile created manually:', profile);
-                  break;
-                }
-              }
+      if (error) {
+        console.error('Error loading profile:', error);
+        
+        // If profile doesn't exist, try to create it
+        if (error.code === 'PGRST116') {
+          console.log('Profile not found, attempting to create...');
+          const user = await supabase.auth.getUser();
+          if (user.data.user) {
+            const username = user.data.user.user_metadata?.username || 
+                           user.data.user.email?.split('@')[0] || 
+                           'user';
+            const profile = await ensureProfileExists(userId, username, user.data.user.email || '');
+            if (profile) {
+              console.log('Profile created successfully:', profile);
+              setProfile(profile);
+              setIsLoading(false);
+              return;
             }
           }
-          return;
         }
-
-        profile = data;
-        console.log('Profile loaded successfully:', profile);
-        break;
+        
+        // If we still can't load/create profile, continue anyway
+        console.warn('Could not load or create profile, continuing without profile');
+        setProfile(null);
+        setIsLoading(false);
+        return;
       }
 
-      setProfile(profile);
+      console.log('Profile loaded successfully:', data);
+      setProfile(data);
     } catch (error) {
       console.error('Error loading profile:', error);
+      setProfile(null);
     } finally {
       setIsLoading(false);
     }
