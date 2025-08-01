@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { supabase } from '../lib/supabase';
+import { supabase, ensureProfileExists } from '../lib/supabase';
 import { User, Session } from '@supabase/supabase-js';
 import { Database } from '../lib/database.types';
 
@@ -43,8 +43,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUser(session?.user ?? null);
       if (session?.user) {
         loadUserProfile(session.user.id);
+      } else {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     });
 
     // Listen for auth changes
@@ -58,9 +59,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         await loadUserProfile(session.user.id);
       } else {
         setProfile(null);
+        setIsLoading(false);
       }
-      
-      setIsLoading(false);
     });
 
     return () => subscription.unsubscribe();
@@ -68,20 +68,59 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const loadUserProfile = async (userId: string) => {
     try {
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
+      console.log('Loading profile for user:', userId);
+      
+      // Try to load profile with retry logic for newly registered users
+      let profile = null;
+      let retries = 0;
+      const maxRetries = 3;
+      
+      while (retries < maxRetries) {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .single();
 
-      if (error) {
-        console.error('Error loading profile:', error);
-        return;
+        if (error) {
+          console.error(`Error loading profile (attempt ${retries + 1}):`, error);
+          
+          // If profile doesn't exist yet (for newly registered users), wait and retry
+          if (error.code === 'PGRST116') {
+            retries++;
+            if (retries < maxRetries) {
+              console.log(`Profile not found, retrying in ${retries * 1000}ms...`);
+              await new Promise(resolve => setTimeout(resolve, retries * 1000));
+              continue;
+            } else {
+              // Final attempt: try to create profile manually
+              console.log('Attempting to create profile manually...');
+              const user = await supabase.auth.getUser();
+              if (user.data.user) {
+                const username = user.data.user.user_metadata?.username || 
+                               user.data.user.email?.split('@')[0] || 
+                               'user';
+                profile = await ensureProfileExists(userId, username, user.data.user.email || '');
+                if (profile) {
+                  console.log('Profile created manually:', profile);
+                  break;
+                }
+              }
+            }
+          }
+          return;
+        }
+
+        profile = data;
+        console.log('Profile loaded successfully:', profile);
+        break;
       }
 
       setProfile(profile);
     } catch (error) {
       console.error('Error loading profile:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -95,6 +134,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       if (error) {
         return { success: false, error: error.message };
+      }
+
+      // Wait for profile to be loaded
+      if (data.user) {
+        await loadUserProfile(data.user.id);
       }
 
       return { success: true };
@@ -120,6 +164,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       if (error) {
         return { success: false, error: error.message };
+      }
+
+      // For immediate login after registration, ensure profile exists
+      if (data.user) {
+        // Try to ensure profile exists (in case trigger failed)
+        await ensureProfileExists(data.user.id, username, email);
+        await loadUserProfile(data.user.id);
       }
 
       return { success: true };

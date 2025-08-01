@@ -15,7 +15,8 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSwitchToLogin }) 
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
-  const { register, isLoading } = useAuth();
+  const [isAutoLogin, setIsAutoLogin] = useState(false);
+  const { register, login, isLoading } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,9 +39,32 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSwitchToLogin }) 
       setError(result.error || 'Registration failed');
     } else {
       setSuccess(true);
-      setTimeout(() => {
-        onSwitchToLogin();
-      }, 2000);
+      
+      // If auto-login is enabled, attempt to login immediately
+      if (isAutoLogin) {
+        // Wait a bit longer for profile creation and database sync
+        setTimeout(async () => {
+          try {
+            const loginResult = await login(email, password);
+            if (!loginResult.success) {
+              console.error('Auto-login failed:', loginResult.error);
+              // Don't show error for email confirmation - that's expected
+              if (!loginResult.error?.includes('email not confirmed')) {
+                setError('Registration successful but auto-login failed. Please login manually.');
+                setSuccess(false);
+              }
+            }
+          } catch (error) {
+            console.error('Auto-login error:', error);
+            setError('Registration successful but auto-login failed. Please login manually.');
+            setSuccess(false);
+          }
+        }, 2000); // Wait 2 seconds for profile creation
+      } else {
+        setTimeout(() => {
+          onSwitchToLogin();
+        }, 2000);
+      }
     }
   };
 
@@ -52,14 +76,33 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSwitchToLogin }) 
             <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
             <h2 className="text-2xl font-bold text-gray-900 mb-2">Registration Successful!</h2>
             <p className="text-gray-600 mb-4">
-              Please check your email to verify your account, then you can sign in.
+              {isAutoLogin 
+                ? 'Setting up your account and logging you in...' 
+                : 'Please check your email to verify your account, then you can sign in.'
+              }
             </p>
-            <button
-              onClick={onSwitchToLogin}
-              className="w-full py-3 px-4 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors"
-            >
-              Go to Sign In
-            </button>
+            {isAutoLogin && (
+              <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                <p className="text-sm text-blue-700">
+                  <strong>Note:</strong> You may need to check your email and click the verification link before you can fully access your account.
+                </p>
+              </div>
+            )}
+            {!isAutoLogin && (
+              <div className="space-y-3">
+                <p className="text-sm text-gray-500">
+                  ✓ Account created successfully<br/>
+                  ✓ Check your email for verification link<br/>
+                  ✓ Click the link to activate your account
+                </p>
+                <button
+                  onClick={onSwitchToLogin}
+                  className="w-full py-3 px-4 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors"
+                >
+                  Go to Sign In
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -157,6 +200,21 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSwitchToLogin }) 
                 required
                 disabled={isLoading}
               />
+            </div>
+
+            {/* Auto-login option */}
+            <div className="flex items-center">
+              <input
+                id="auto-login"
+                type="checkbox"
+                checked={isAutoLogin}
+                onChange={(e) => setIsAutoLogin(e.target.checked)}
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                disabled={isLoading}
+              />
+              <label htmlFor="auto-login" className="ml-2 block text-sm text-gray-700">
+                Automatically log me in after registration
+              </label>
             </div>
 
             {/* Error Message */}

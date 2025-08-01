@@ -14,10 +14,15 @@ const LoginForm: React.FC<{ onSwitchToRegister: () => void }> = ({ onSwitchToReg
     e.preventDefault();
     setError('');
     
+    if (!email || !password) {
+      setError('Please enter both email and password');
+      return;
+    }
+    
     const result = await login(email, password);
     
     if (!result.success) {
-      setError(result.error || 'Login failed');
+      setError(result.error || 'Login failed. Please check your credentials and try again.');
     }
   };
 
