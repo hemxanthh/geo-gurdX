@@ -48,11 +48,8 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSwitchToLogin }) 
             const loginResult = await login(email, password);
             if (!loginResult.success) {
               console.error('Auto-login failed:', loginResult.error);
-              // Don't show error for email confirmation - that's expected
-              if (!loginResult.error?.includes('email not confirmed')) {
-                setError('Registration successful but auto-login failed. Please login manually.');
-                setSuccess(false);
-              }
+              setError('Registration successful but auto-login failed. Please login manually.');
+              setSuccess(false);
             }
           } catch (error) {
             console.error('Auto-login error:', error);
@@ -78,13 +75,13 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSwitchToLogin }) 
             <p className="text-gray-600 mb-4">
               {isAutoLogin 
                 ? 'Setting up your account and logging you in...' 
-                : 'Please check your email to verify your account, then you can sign in.'
+                : 'Your account has been created successfully! You can now sign in.'
               }
             </p>
             {isAutoLogin && (
-              <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-                <p className="text-sm text-blue-700">
-                  <strong>Note:</strong> You may need to check your email and click the verification link before you can fully access your account.
+              <div className="mt-4 p-3 bg-green-50 rounded-lg">
+                <p className="text-sm text-green-700">
+                  <strong>Success!</strong> Your account is ready to use.
                 </p>
               </div>
             )}
@@ -92,8 +89,8 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSwitchToLogin }) 
               <div className="space-y-3">
                 <p className="text-sm text-gray-500">
                   ✓ Account created successfully<br/>
-                  ✓ Check your email for verification link<br/>
-                  ✓ Click the link to activate your account
+                  ✓ You can now sign in immediately<br/>
+                  ✓ No email confirmation required
                 </p>
                 <button
                   onClick={onSwitchToLogin}

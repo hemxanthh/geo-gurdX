@@ -10,7 +10,7 @@ interface AuthContextType {
   profile: Profile | null;
   session: Session | null;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  register: (email: string, password: string, username: string) => Promise<{ success: boolean; error?: string }>;
+  register: (email: string, password: string, username: string) => Promise<{ success: boolean; error?: string; needsEmailConfirmation?: boolean }>;
   logout: () => Promise<void>;
   isLoading: boolean;
   updateProfile: (updates: Partial<Profile>) => Promise<{ success: boolean; error?: string }>;
@@ -149,7 +149,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const register = async (email: string, password: string, username: string): Promise<{ success: boolean; error?: string }> => {
+  const register = async (email: string, password: string, username: string): Promise<{ success: boolean; error?: string; needsEmailConfirmation?: boolean }> => {
     try {
       setIsLoading(true);
       const { data, error } = await supabase.auth.signUp({
@@ -166,6 +166,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return { success: false, error: error.message };
       }
 
+      // Check if email confirmation is required
+      const needsEmailConfirmation = !!(data.user && data.user.email_confirmed_at === null);
+
       // For immediate login after registration, ensure profile exists
       if (data.user) {
         // Try to ensure profile exists (in case trigger failed)
@@ -173,7 +176,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         await loadUserProfile(data.user.id);
       }
 
-      return { success: true };
+      return { 
+        success: true, 
+        needsEmailConfirmation 
+      };
     } catch (error: any) {
       return { success: false, error: error.message };
     } finally {
