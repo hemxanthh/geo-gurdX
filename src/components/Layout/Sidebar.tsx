@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Home, Map, History, Car, Settings, Shield, Crown } from 'lucide-react';
+import { X, Home, Map, History, Car, Settings, Shield, Crown, Users } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -17,6 +17,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentPage, onPageC
     { id: 'dashboard', label: 'Dashboard', icon: Home, description: 'Overview & stats' },
     { id: 'live-map', label: 'Live Tracking', icon: Map, description: 'Real-time location' },
     { id: 'trips', label: 'Trip History', icon: History, description: 'Past journeys' },
+    { id: 'users', label: 'Users', icon: Users, description: 'Registered users' },
     { id: 'settings', label: 'Settings', icon: Settings, description: 'Preferences' },
   ];
 

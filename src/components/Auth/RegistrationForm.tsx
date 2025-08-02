@@ -162,7 +162,7 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSwitchToLogin }) 
               </div>
               <div>
                 <h1 className="text-4xl font-bold text-white mb-2">Join Geo Guard-X</h1>
-                <p className="text-purple-200 text-lg">Secure your fleet with advanced tracking</p>
+                <p className="text-purple-200 text-lg">Secure your vehicle with advanced tracking</p>
               </div>
             </div>
             
@@ -170,20 +170,20 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSwitchToLogin }) 
               <div className="p-4 bg-white/5 backdrop-blur-lg rounded-xl border border-white/10">
                 <div className="flex items-center space-x-3 text-white/90 mb-2">
                   <Users className="w-5 h-5 text-blue-400" />
-                  <span className="font-semibold">Join 10,000+ Fleet Managers</span>
+                  <span className="font-semibold">Defense-Grade Precision & Security</span>
                 </div>
                 <p className="text-white/70 text-sm">
-                  Companies worldwide trust Geo Guard-X for their vehicle security and tracking needs.
+                  Backed by Indian Regional Navigation Satellite System (IRNSS), encrypted GSM alerts, and high-reliability hardware — ensuring 99.9% uptime even in remote or signal-compromised areas.
                 </p>
               </div>
               
               <div className="p-4 bg-white/5 backdrop-blur-lg rounded-xl border border-white/10">
                 <div className="flex items-center space-x-3 text-white/90 mb-2">
                   <Star className="w-5 h-5 text-yellow-400" />
-                  <span className="font-semibold">Enterprise-Grade Security</span>
+                  <span className="font-semibold">Plug-and-Track Simplicity</span>
                 </div>
                 <p className="text-white/70 text-sm">
-                  Bank-level encryption and 99.9% uptime guarantee for mission-critical operations.
+                  Deploy within minutes using our DIY-friendly setup — no technical expertise needed. Track your vehicle live, monitor movement, and receive instant SMS alerts with zero subscription cost.
                 </p>
               </div>
               
@@ -207,15 +207,15 @@ const RegistrationForm: React.FC<RegistrationFormProps> = ({ onSwitchToLogin }) 
               ))}
             </div>
             <p className="text-white/80 text-sm italic mb-3">
-              "The most comprehensive vehicle management platform we've ever used. The real-time alerts have saved us countless hours and prevented multiple theft attempts."
+              "We finally feel in control. Our NavSecure-X unit not only sends alerts when the ignition is tampered with, but also lets us track our vehicle in real time. It's a lifesaver."
             </p>
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-gradient-to-r from-purple-400 to-blue-500 rounded-full flex items-center justify-center">
                 <span className="text-white font-bold text-sm">MR</span>
               </div>
               <div>
-                <p className="text-white font-medium text-sm">Marcus Rodriguez</p>
-                <p className="text-white/60 text-xs">Fleet Director, TransGlobal Logistics</p>
+                <p className="text-white font-medium text-sm">Hemanth K</p>
+                <p className="text-white/60 text-xs">Developer-GEO GUARD-X</p>
               </div>
             </div>
           </div>

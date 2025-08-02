@@ -52,7 +52,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, onPageChange }) => {
               <Shield className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-gray-900">Advanced Vehicle Tracking And Security</h1>
+              <h1 className="text-xl font-bold text-gray-900">NavIC-Powered Vehicle Anti-Theft & Tracking System</h1>
             </div>
           </div>
         </div>
