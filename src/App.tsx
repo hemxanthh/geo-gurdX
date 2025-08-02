@@ -23,10 +23,11 @@ const App: React.FC = () => {
   if (isLoading) {
     console.log('App: Showing loading screen');
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-800 via-blue-800 to-indigo-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent border-solid rounded-full animate-spin mx-auto mb-2"></div>
-          <p className="text-gray-500 text-sm">Loading...</p>
+          <div className="w-8 h-8 border-2 border-white border-t-transparent border-solid rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-white/80 text-sm">Initializing Geo Guard-X...</p>
+          <p className="text-white/60 text-xs mt-1">Setting up your dashboard</p>
         </div>
       </div>
     );

@@ -45,7 +45,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
   useEffect(() => {
     console.log('SocketContext: User/Profile changed', { user: user?.email, profile: profile?.username });
     
-    if (user && profile) {
+    if (user) { // Only require user, not profile
       console.log('SocketContext: Initializing subscriptions...');
       initializeRealtimeSubscriptions();
       loadInitialData();
@@ -69,7 +69,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
         supabase.removeChannel(channel);
       });
     };
-  }, [user, profile]);
+  }, [user]); // Only depend on user, not profile
 
   const initializeRealtimeSubscriptions = () => {
     if (!user) return;

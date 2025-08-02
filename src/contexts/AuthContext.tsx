@@ -42,10 +42,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Safety timeout to prevent infinite loading
     const loadingTimeout = setTimeout(() => {
       if (mounted && isLoading) {
-        console.warn('Auth initialization timed out, setting loading to false');
+        console.warn('Auth initialization timed out after 3 seconds, setting loading to false');
         setIsLoading(false);
       }
-    }, 5000); // 5 second timeout
+    }, 3000); // Reduced from 5 seconds to 3 seconds
 
     const initializeAuth = async () => {
       try {
@@ -69,8 +69,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setUser(session?.user ?? null);
           
           if (session?.user) {
-            await loadUserProfile(session.user.id);
+            // Load profile async without blocking
+            loadUserProfile(session.user.id);
           } else {
+            setIsLoading(false);
+          }
+          
+          // Set loading to false immediately if we have a user
+          // Profile can load in background
+          if (session?.user) {
             setIsLoading(false);
           }
         }
@@ -105,7 +112,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        await loadUserProfile(session.user.id);
+        // Load profile in background, don't await
+        loadUserProfile(session.user.id);
+        // Don't block - user can see app immediately
+        setIsLoading(false);
       } else {
         console.log('User logged out, clearing profile...');
         setProfile(null);
@@ -123,7 +133,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const loadUserProfile = async (userId: string) => {
     try {
       console.log('Loading profile for user:', userId);
-      setIsLoading(true);
       
       // First attempt to load profile
       const { data, error } = await supabase
@@ -173,26 +182,35 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
       setIsLoading(true);
+      console.log('Login attempt for:', email);
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) {
+        console.error('Login error:', error);
+        setIsLoading(false);
         return { success: false, error: error.message };
       }
 
-      // Wait for profile to be loaded
+      console.log('Login successful, loading profile...');
+      
+      // The auth state change listener will handle profile loading
+      // Don't call loadUserProfile here to avoid double loading
       if (data.user) {
-        await loadUserProfile(data.user.id);
+        console.log('User logged in:', data.user.email);
+        // Profile will be loaded by the auth state change listener
       }
 
       return { success: true };
     } catch (error: any) {
-      return { success: false, error: error.message };
-    } finally {
+      console.error('Login exception:', error);
       setIsLoading(false);
+      return { success: false, error: error.message };
     }
+    // Don't set loading to false here - let the auth state change handle it
   };
 
   const register = async (email: string, password: string, username: string): Promise<{ success: boolean; error?: string; needsEmailConfirmation?: boolean }> => {
