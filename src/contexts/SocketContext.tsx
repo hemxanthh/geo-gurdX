@@ -76,25 +76,24 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
 
     const newChannels: RealtimeChannel[] = [];
 
-    // Subscribe to vehicle status updates
-    const vehicleStatusChannel = supabase
-      .channel('vehicle_status_changes')
+    // Subscribe to locations updates (GPS tracking)
+    const locationsChannel = supabase
+      .channel('locations_changes')
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
-          table: 'vehicle_status',
-          filter: `user_id=eq.${user.id}`,
+          table: 'locations',
         },
         (payload) => {
-          console.log('Vehicle status update:', payload);
-          handleVehicleStatusUpdate(payload);
+          console.log('Location update:', payload);
+          handleLocationUpdate(payload);
         }
       )
       .subscribe((status) => {
         if (status === 'SUBSCRIBED') {
-          console.log('Subscribed to vehicle status updates');
+          console.log('Subscribed to location updates');
           setConnected(true);
         }
       });
@@ -135,7 +134,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
       )
       .subscribe();
 
-    newChannels.push(vehicleStatusChannel, alertsChannel, tripsChannel);
+    newChannels.push(locationsChannel, alertsChannel, tripsChannel);
     setChannels(newChannels);
   };
 
@@ -143,29 +142,36 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
     if (!user) return;
 
     try {
-      // Load vehicle status
-      const { data: vehicleStatusData } = await supabase
-        .from('vehicle_status')
+      // Load latest locations (since no vehicle_id, treat all as one vehicle)
+      const { data: locationsData } = await supabase
+        .from('locations')
         .select('*')
-        .eq('user_id', user.id);
+        .order('recorded_at', { ascending: false })
+        .limit(1);
 
-      if (vehicleStatusData) {
+      if (locationsData && locationsData.length > 0) {
+        const latestLocation = locationsData[0];
         const statusMap: Record<string, VehicleStatus> = {};
-        vehicleStatusData.forEach((status: any) => {
-          statusMap[status.vehicle_id] = {
-            vehicleId: status.vehicle_id,
-            location: status.location as any,
-            ignitionOn: status.ignition_on,
-            engineLocked: status.engine_locked,
-            batteryLevel: status.battery_level,
-            gsmSignal: status.gsm_signal,
-            gpsSignal: status.gps_signal,
-            isMoving: status.is_moving,
-            lastUpdate: new Date(status.last_update),
-            temperature: status.temperature,
-            mileage: status.mileage,
-          };
-        });
+        
+        // Create a default vehicle status from latest location
+        statusMap['default-vehicle'] = {
+          vehicleId: 'default-vehicle',
+          location: {
+            lat: latestLocation.lat,
+            lng: latestLocation.lng,
+            timestamp: new Date(latestLocation.recorded_at)
+          },
+          ignitionOn: latestLocation.ignition || false,
+          engineLocked: false,
+          batteryLevel: 100,
+          gsmSignal: 100,
+          gpsSignal: 100,
+          isMoving: (latestLocation.speed || 0) > 0,
+          lastUpdate: new Date(latestLocation.recorded_at),
+          temperature: undefined,
+          mileage: 0,
+        };
+        
         setVehicleStatus(statusMap);
       }
 
@@ -222,34 +228,32 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
     }
   };
 
-  const handleVehicleStatusUpdate = (payload: any) => {
+  const handleLocationUpdate = (payload: any) => {
     const { eventType, new: newRecord, old: oldRecord } = payload;
     
     if (eventType === 'INSERT' || eventType === 'UPDATE') {
       const status: VehicleStatus = {
-        vehicleId: newRecord.vehicle_id,
-        location: newRecord.location,
-        ignitionOn: newRecord.ignition_on,
-        engineLocked: newRecord.engine_locked,
-        batteryLevel: newRecord.battery_level,
-        gsmSignal: newRecord.gsm_signal,
-        gpsSignal: newRecord.gps_signal,
-        isMoving: newRecord.is_moving,
-        lastUpdate: new Date(newRecord.last_update),
-        temperature: newRecord.temperature,
-        mileage: newRecord.mileage,
+        vehicleId: 'default-vehicle',
+        location: {
+          lat: newRecord.lat,
+          lng: newRecord.lng,
+          timestamp: new Date(newRecord.recorded_at)
+        },
+        ignitionOn: newRecord.ignition || false,
+        engineLocked: false,
+        batteryLevel: 100,
+        gsmSignal: 100,
+        gpsSignal: 100,
+        isMoving: (newRecord.speed || 0) > 0,
+        lastUpdate: new Date(newRecord.recorded_at),
+        temperature: undefined,
+        mileage: 0,
       };
       
       setVehicleStatus(prev => ({
         ...prev,
-        [newRecord.vehicle_id]: status,
+        'default-vehicle': status,
       }));
-    } else if (eventType === 'DELETE') {
-      setVehicleStatus(prev => {
-        const updated = { ...prev };
-        delete updated[oldRecord.vehicle_id];
-        return updated;
-      });
     }
   };
 
