@@ -5,16 +5,13 @@
 #include <TinyGPS++.h>
 
 // WiFi credentials - REPLACE WITH YOUR ACTUAL WiFi DETAILS
-const char* ssid = "YourActualWiFiName";        // Replace with your home/office WiFi name
-const char* password = "YourActualWiFiPassword"; // Replace with your WiFi password
+const char* ssid = "YourActualWiFiName";        // Replace with your real WiFi name
+const char* password = "YourActualWiFiPassword"; // Replace with your real WiFi password
 
-// Supabase Edge Function endpoint - FROM YOUR .env FILE
-const char* serverURL = "https://snavhslypetgxivdvdok.supabase.co/functions/v1/gps-tracker";
+// Direct Supabase REST API - No Edge Function needed!
+const char* serverURL = "https://snavhslypetgxivdvdok.supabase.co/rest/v1/locations";
 
-// Temporary test endpoint while Supabase has issues
-// const char* serverURL = "https://httpbin.org/post";  // This will echo back your GPS data
-
-// Supabase API Key - FROM YOUR .env FILE (VITE_SUPABASE_ANON_KEY)
+// Supabase API Key - Direct database access
 const char* supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNuYXZoc2x5cGV0Z3hpdmR2ZG9rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQwMjIxNjgsImV4cCI6MjA2OTU5ODE2OH0.QYHgyhW1gbGwePUIidvLedxR7F0f_Z3w7ed-WapHcdI";
 
 // GPS configuration
@@ -31,7 +28,7 @@ HardwareSerial ss(2); // Use Serial2 for GPS
 unsigned long lastGPSTime = 0;
 unsigned long lastSendTime = 0;
 const unsigned long GPS_READ_INTERVAL = 1000;    // Read GPS every 1 second
-const unsigned long SEND_INTERVAL = 30000;       // Send data every 30 seconds
+const unsigned long SEND_INTERVAL = 10000;       // Send data every 10 seconds for testing
 
 // GPS data variables
 double latitude = 0.0;
@@ -48,9 +45,9 @@ void setup() {
   Serial.begin(115200);
   Serial.println("ESP32 NavIC GPS Tracker Starting...");
   
-  // Try 9600 baud (most common for GPS modules)
-  ss.begin(9600, SERIAL_8N1, 16, 17); // RX=GPIO16, TX=GPIO17
-  Serial.println("GPS Serial initialized on GPIO16(RX), GPIO17(TX) at 9600 baud");
+  // NavIC modules commonly use 38400 baud rate
+  ss.begin(38400, SERIAL_8N1, 16, 17); // RX=GPIO16, TX=GPIO17
+  Serial.println("NavIC Serial initialized on GPIO16(RX), GPIO17(TX) at 38400 baud");
   
   // Connect to WiFi
   connectToWiFi();
@@ -118,24 +115,28 @@ void checkWiFiConnection() {
 }
 
 void readGPSData() {
-  // Read GPS data from Serial2
+  // Read NavIC data from Serial2
   static unsigned long lastDebugTime = 0;
-  static String gpsBuffer = "";
+  static String navicBuffer = "";
   
   while (ss.available() > 0) {
     char c = ss.read();
-    gpsBuffer += c;
+    navicBuffer += c;
     
-    // Debug: Print raw GPS data every 10 seconds
+    // Debug: Print raw NavIC data every 10 seconds
     if (millis() - lastDebugTime >= 10000) {
-      Serial.println("Raw GPS data received:");
-      Serial.println(gpsBuffer);
-      gpsBuffer = ""; // Clear buffer
+      Serial.println("Raw NavIC data received:");
+      Serial.println(navicBuffer);
+      Serial.println("--- NavIC Debug Info ---");
+      Serial.print("Buffer length: ");
+      Serial.println(navicBuffer.length());
+      Serial.println("------------------------");
+      navicBuffer = ""; // Clear buffer
       lastDebugTime = millis();
     }
     
     if (gps.encode(c)) {
-      // New GPS sentence received and parsed
+      // New NMEA sentence received and parsed
       if (gps.location.isValid()) {
         latitude = gps.location.lat();
         longitude = gps.location.lng();
@@ -148,17 +149,23 @@ void readGPSData() {
           speed_kmh = 0.0;
         }
         
-        // Print GPS info every 5 seconds
+        // Print NavIC info every 5 seconds
         if (millis() - lastGPSTime >= 5000) {
           printGPSInfo();
           lastGPSTime = millis();
         }
       } else {
-        // GPS sentence parsed but location not valid yet
-        Serial.print("GPS parsing... Satellites: ");
+        // NMEA sentence parsed but location not valid yet
+        Serial.print("NavIC parsing... Satellites: ");
         Serial.print(gps.satellites.value());
         Serial.print(", HDOP: ");
-        Serial.println(gps.hdop.hdop());
+        Serial.print(gps.hdop.hdop());
+        if (gps.date.isValid() && gps.time.isValid()) {
+          Serial.print(", Time fix: YES");
+        } else {
+          Serial.print(", Time fix: NO");
+        }
+        Serial.println();
       }
     }
   }
@@ -177,7 +184,7 @@ void readGPSData() {
 }
 
 void printGPSInfo() {
-  Serial.println("=== GPS Information ===");
+  Serial.println("=== NavIC Information ===");
   Serial.print("Location: ");
   Serial.print(latitude, 6);
   Serial.print(", ");
@@ -192,7 +199,21 @@ void printGPSInfo() {
   Serial.print("Age: ");
   Serial.print(gps.location.age());
   Serial.println(" ms");
-  Serial.println("========================");
+  if (gps.date.isValid() && gps.time.isValid()) {
+    Serial.print("Date/Time: ");
+    Serial.print(gps.date.day());
+    Serial.print("/");
+    Serial.print(gps.date.month());
+    Serial.print("/");
+    Serial.print(gps.date.year());
+    Serial.print(" ");
+    Serial.print(gps.time.hour());
+    Serial.print(":");
+    Serial.print(gps.time.minute());
+    Serial.print(":");
+    Serial.println(gps.time.second());
+  }
+  Serial.println("=========================");
 }
 
 void sendGPSData() {
@@ -206,26 +227,30 @@ void sendGPSData() {
     return;
   }
   
-  Serial.println("Preparing to send GPS data...");
+  Serial.println("Preparing to send GPS data to Supabase...");
   
   HTTPClient http;
   http.begin(serverURL);
+  
+  // Supabase REST API headers
   http.addHeader("Content-Type", "application/json");
-  http.addHeader("Authorization", String("Bearer ") + supabaseKey);
   http.addHeader("apikey", supabaseKey);
+  http.addHeader("Authorization", String("Bearer ") + supabaseKey);
+  http.addHeader("Prefer", "return=minimal");  // Reduces response size
   http.setTimeout(10000); // 10 second timeout
   
-  // Create JSON payload
-  StaticJsonDocument<200> doc;
+  // Create JSON payload matching your locations table structure
+  StaticJsonDocument<300> doc;
   doc["lat"] = latitude;
   doc["lng"] = longitude;
   doc["speed"] = speed_kmh;
   doc["ignition"] = (speed_kmh > 1.0); // Assume ignition on if moving
+  doc["recorded_at"] = "now()";  // Supabase will use current timestamp
   
   String jsonString;
   serializeJson(doc, jsonString);
   
-  Serial.println("Sending GPS data...");
+  Serial.println("Sending GPS data directly to Supabase...");
   Serial.print("URL: ");
   Serial.println(serverURL);
   Serial.print("Payload: ");
@@ -242,20 +267,24 @@ void sendGPSData() {
     Serial.print("Response: ");
     Serial.println(response);
     
-    if (httpResponseCode == 200) {
+    if (httpResponseCode == 201) {  // 201 = Created (successful insert)
+      send_count++;
+      Serial.print("✅ Data sent successfully to Supabase! Count: ");
+      Serial.println(send_count);
+    } else if (httpResponseCode == 200) {  // Sometimes returns 200
       send_count++;
       Serial.print("✅ Data sent successfully! Count: ");
       Serial.println(send_count);
     } else {
-      Serial.print("❌ Server error! Code: ");
+      Serial.print("❌ Supabase error! Code: ");
       Serial.println(httpResponseCode);
     }
   } else {
     Serial.print("❌ HTTP Error: ");
     Serial.println(httpResponseCode);
     Serial.println("Possible causes:");
-    Serial.println("- Wrong URL");
-    Serial.println("- Edge Function not deployed");
+    Serial.println("- WiFi connection issue");
+    Serial.println("- Wrong Supabase URL or API key");
     Serial.println("- Network timeout");
   }
   
