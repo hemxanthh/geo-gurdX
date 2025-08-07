@@ -1,42 +1,26 @@
+
 import React, { useState, useEffect } from 'react';
 import { 
   Navigation, 
   Clock, 
-  Fuel, 
   Gauge, 
-  Shield, 
-  AlertTriangle, 
-  TrendingUp,
-  MapPin,
-  Car,
-  Activity
+  MapPin
 } from 'lucide-react';
 import { useSocket } from '../../contexts/SocketContext';
 import { clsx } from 'clsx';
-
-interface DashboardProps {
-  onPageChange?: (page: string) => void;
-  onTripCompleted?: () => void;
-}
 
 interface DashboardStats {
   totalTrips: number;
   totalDistance: number;
   avgSpeed: number;
-  fuelEfficiency: number;
-  activeAlerts: number;
-  vehicleStatus: string;
 }
 
-export default function Dashboard({ onPageChange, onTripCompleted }: DashboardProps) {
+export default function Dashboard() {
   const { vehicleStatus } = useSocket();
   const [stats, setStats] = useState<DashboardStats>({
     totalTrips: 0,
     totalDistance: 0,
-    avgSpeed: 0,
-    fuelEfficiency: 0,
-    activeAlerts: 0,
-    vehicleStatus: 'Unknown'
+    avgSpeed: 0
   });
 
   const currentVehicle = Object.values(vehicleStatus)[0]; // Get first vehicle for demo
@@ -46,10 +30,7 @@ export default function Dashboard({ onPageChange, onTripCompleted }: DashboardPr
     setStats({
       totalTrips: 24,
       totalDistance: 1247.5,
-      avgSpeed: 45.2,
-      fuelEfficiency: 12.8,
-      activeAlerts: 0,
-      vehicleStatus: currentVehicle?.ignitionOn ? 'Active' : 'Inactive'
+      avgSpeed: 45.2
     });
   }, [currentVehicle]);
 
@@ -59,7 +40,7 @@ export default function Dashboard({ onPageChange, onTripCompleted }: DashboardPr
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600 mt-1">Vehicle monitoring and control center</p>
+          <p className="text-gray-600 mt-1">Vehicle monitoring and tracking center</p>
         </div>
         
         {currentVehicle && (
@@ -84,8 +65,8 @@ export default function Dashboard({ onPageChange, onTripCompleted }: DashboardPr
         )}
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* Stats Grid - Only 3 cards now */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Total Trips */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-4">
@@ -150,94 +131,35 @@ export default function Dashboard({ onPageChange, onTripCompleted }: DashboardPr
             Current: {(currentVehicle as any)?.speed || 0} km/h
           </div>
         </div>
-
-        {/* Fuel Efficiency */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-orange-100 rounded-lg">
-                <Fuel className="w-6 h-6 text-orange-600" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900">Fuel Efficiency</h3>
-                <p className="text-sm text-gray-500">Average</p>
-              </div>
-            </div>
-          </div>
-          <div className="text-3xl font-bold text-gray-900 mb-2">
-            {stats.fuelEfficiency.toFixed(1)}
-            <span className="text-lg text-gray-500 ml-1">km/l</span>
-          </div>
-          <div className="text-sm text-gray-500">
-            Battery: {currentVehicle?.batteryLevel || 0}%
-          </div>
-        </div>
       </div>
 
-      {/* Vehicle Status Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Vehicle Status */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center space-x-3 mb-4">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <Car className="w-6 h-6 text-blue-600" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-gray-900">Vehicle Status</h3>
-              <p className="text-sm text-gray-500">Current state</p>
-            </div>
+      {/* Quick Actions */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+        <div className="flex items-center space-x-3 mb-6">
+          <div className="p-2 bg-blue-100 rounded-lg">
+            <Clock className="w-6 h-6 text-blue-600" />
           </div>
-          
-          <div className="space-y-3">
-            <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
-              <div className="flex items-center space-x-3">
-                <div className="w-3 h-3 bg-green-400 rounded-full"></div>
-                <div>
-                  <div className="font-medium text-green-800">All Systems Normal</div>
-                  <div className="text-sm text-green-600">Vehicle is operational</div>
-                </div>
-              </div>
-              <div className="text-xs text-green-600 font-medium">
-                {new Date().toLocaleTimeString()}
-              </div>
-            </div>
-            
-            <div className="text-center py-4">
-              <Activity className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-              <div className="text-sm text-gray-500">Vehicle is secure</div>
-            </div>
+          <div>
+            <h3 className="font-semibold text-gray-900">Quick Actions</h3>
+            <p className="text-sm text-gray-500">Manage your tracking system</p>
           </div>
         </div>
-
-        {/* Quick Actions */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center space-x-3 mb-4">
-            <div className="p-2 bg-purple-100 rounded-lg">
-              <TrendingUp className="w-6 h-6 text-purple-600" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-gray-900">Quick Actions</h3>
-              <p className="text-sm text-gray-500">Common tasks</p>
-            </div>
-          </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <button className="p-4 text-left bg-blue-50 hover:bg-blue-100 rounded-lg border border-blue-200 transition-colors">
+            <div className="font-medium text-blue-900">View Live Map</div>
+            <div className="text-sm text-blue-600 mt-1">Real-time location tracking</div>
+          </button>
           
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              onClick={() => onPageChange?.('live-map')}
-              className="p-3 bg-blue-50 hover:bg-blue-100 rounded-lg border border-blue-200 transition-colors"
-            >
-              <MapPin className="w-5 h-5 text-blue-600 mb-1" />
-              <div className="text-sm font-medium text-blue-800">Live Map</div>
-            </button>
-            
-            <button
-              onClick={() => onPageChange?.('trips')}
-              className="p-3 bg-green-50 hover:bg-green-100 rounded-lg border border-green-200 transition-colors"
-            >
-              <Navigation className="w-5 h-5 text-green-600 mb-1" />
-              <div className="text-sm font-medium text-green-800">Trip History</div>
-            </button>
-          </div>
+          <button className="p-4 text-left bg-green-50 hover:bg-green-100 rounded-lg border border-green-200 transition-colors">
+            <div className="font-medium text-green-900">Trip History</div>
+            <div className="text-sm text-green-600 mt-1">View past journeys</div>
+          </button>
+          
+          <button className="p-4 text-left bg-purple-50 hover:bg-purple-100 rounded-lg border border-purple-200 transition-colors">
+            <div className="font-medium text-purple-900">Settings</div>
+            <div className="text-sm text-purple-600 mt-1">Configure tracking options</div>
+          </button>
         </div>
       </div>
     </div>

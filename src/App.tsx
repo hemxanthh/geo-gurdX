@@ -6,7 +6,6 @@ import RegistrationForm from './components/Auth/RegistrationForm';
 import Header from './components/Layout/Header';
 import Sidebar from './components/Layout/Sidebar';
 import Dashboard from './components/Dashboard/Dashboard';
-import AdminDashboard from './components/Admin/AdminDashboard';
 import LiveMap from './components/Map/LiveMap';
 import TripHistory from './components/Trips/TripHistory';
 import Settings from './components/Settings/Settings';
@@ -51,9 +50,7 @@ const App: React.FC = () => {
   const renderCurrentPage = () => {
     switch (currentPage) {
       case 'dashboard':
-        return <Dashboard onPageChange={setCurrentPage} />;
-      case 'admin':
-        return <AdminDashboard />;
+        return <Dashboard />;
       case 'live-map':
         return <LiveMap />;
       case 'trips':
@@ -61,14 +58,14 @@ const App: React.FC = () => {
       case 'settings':
         return <Settings />;
       default:
-        return <Dashboard onPageChange={setCurrentPage} />;
+        return <Dashboard />;
     }
   };
 
   return (
     <SocketProvider>
       <div className="min-h-screen bg-gray-50">
-        <Header onMenuClick={() => setSidebarOpen(true)} onPageChange={setCurrentPage} />
+        <Header onMenuClick={() => setSidebarOpen(true)} />
         <div className="flex">
           <Sidebar
             isOpen={sidebarOpen}

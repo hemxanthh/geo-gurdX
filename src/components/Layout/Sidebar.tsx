@@ -1,7 +1,6 @@
 import React from 'react';
-import { X, Home, Map, History, Car, Settings, Shield, Crown, Users } from 'lucide-react';
+import { X, Home, Map, History, Settings, Shield } from 'lucide-react';
 import { clsx } from 'clsx';
-import { useAuth } from '../../contexts/AuthContext';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -11,24 +10,12 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentPage, onPageChange }) => {
-  const { user } = useAuth();
-  
-  const baseMenuItems = [
+  const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Home, description: 'Overview & stats' },
     { id: 'live-map', label: 'Live Tracking', icon: Map, description: 'Real-time location' },
     { id: 'trips', label: 'Trip History', icon: History, description: 'Past journeys' },
-    { id: 'users', label: 'Users', icon: Users, description: 'Registered users' },
     { id: 'settings', label: 'Settings', icon: Settings, description: 'Preferences' },
   ];
-
-  // Add admin menu item for admin users
-  const menuItems = user?.role === 'admin' 
-    ? [
-        ...baseMenuItems.slice(0, 1), // Dashboard
-        { id: 'admin', label: 'Admin Panel', icon: Crown, description: 'System administration' },
-        ...baseMenuItems.slice(1), // Rest of the items
-      ]
-    : baseMenuItems;
   const handlePageClick = (pageId: string) => {
     onPageChange(pageId);
     onClose();
@@ -65,6 +52,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentPage, onPageC
             <button
               onClick={onClose}
               className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
+              aria-label="Close sidebar"
             >
               <X className="w-5 h-5 text-gray-500" />
             </button>
@@ -84,42 +72,30 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentPage, onPageC
                     'w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200',
                     'text-left group',
                     isActive
-                      ? item.id === 'admin'
-                        ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/25'
-                        : 'bg-blue-600 text-white shadow-lg shadow-blue-600/25'
-                      : item.id === 'admin'
-                        ? 'text-purple-600 hover:bg-purple-50 hover:text-purple-700'
-                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                      ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/25'
+                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                   )}
                 >
                   <Icon className={clsx(
                     'w-5 h-5 transition-colors',
                     isActive 
                       ? 'text-white' 
-                      : item.id === 'admin'
-                        ? 'text-purple-400 group-hover:text-purple-600'
-                        : 'text-gray-400 group-hover:text-gray-600'
+                      : 'text-gray-400 group-hover:text-gray-600'
                   )} />
                   <div className="flex-1">
                     <div className={clsx(
                       'font-medium',
                       isActive 
                         ? 'text-white' 
-                        : item.id === 'admin'
-                          ? 'text-purple-700'
-                          : 'text-gray-900'
+                        : 'text-gray-900'
                     )}>
                       {item.label}
                     </div>
                     <div className={clsx(
                       'text-sm',
                       isActive 
-                        ? item.id === 'admin'
-                          ? 'text-purple-100'
-                          : 'text-blue-100'
-                        : item.id === 'admin'
-                          ? 'text-purple-500'
-                          : 'text-gray-500'
+                        ? 'text-blue-100'
+                        : 'text-gray-500'
                     )}>
                       {item.description}
                     </div>

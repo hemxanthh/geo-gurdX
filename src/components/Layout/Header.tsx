@@ -1,16 +1,15 @@
 import React, { useState } from 'react';
-import { Menu, Settings, User, LogOut, Shield, Crown } from 'lucide-react';
+import { Menu, Settings, User, LogOut, Shield } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSocket } from '../../contexts/SocketContext';
 import { clsx } from 'clsx';
 
 interface HeaderProps {
   onMenuClick: () => void;
-  onPageChange?: (page: string) => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ onMenuClick, onPageChange }) => {
-  const { user, profile, logout } = useAuth();
+const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
+  const { profile, logout } = useAuth();
   const { connected } = useSocket();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -28,13 +27,6 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, onPageChange }) => {
     }
   };
 
-  const handleAdminAccess = () => {
-    if (onPageChange) {
-      onPageChange('admin');
-    }
-    setShowUserMenu(false);
-  };
-
   return (
     <header className="bg-white border-b border-gray-200 px-6 py-4 sticky top-0 z-30">
       <div className="flex items-center justify-between">
@@ -43,6 +35,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, onPageChange }) => {
           <button
             onClick={onMenuClick}
             className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
+            aria-label="Open navigation menu"
           >
             <Menu className="w-6 h-6 text-gray-600" />
           </button>
@@ -71,7 +64,10 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, onPageChange }) => {
           </div>
 
           {/* Settings */}
-          <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+          <button 
+            className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+            aria-label="Settings"
+          >
             <Settings className="w-6 h-6 text-gray-600" />
           </button>
 
@@ -95,23 +91,8 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, onPageChange }) => {
                 <div className="p-3 border-b border-gray-100">
                   <p className="font-medium text-gray-900">{profile?.username}</p>
                   <p className="text-sm text-gray-500">{profile?.email}</p>
-                  {profile?.role === 'admin' && (
-                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 mt-1">
-                      <Crown className="w-3 h-3 mr-1" />
-                      Administrator
-                    </span>
-                  )}
                 </div>
                 <div className="p-2 space-y-1">
-                  {profile?.role === 'admin' && (
-                    <button
-                      onClick={handleAdminAccess}
-                      className="w-full flex items-center space-x-2 px-3 py-2 text-left rounded-lg hover:bg-gray-50 text-purple-600 transition-colors"
-                    >
-                      <Shield className="w-4 h-4" />
-                      <span>Admin Dashboard</span>
-                    </button>
-                  )}
                   <button
                     onClick={handleLogout}
                     disabled={isLoggingOut}
