@@ -1,167 +1,163 @@
-
-import React, { useState, useEffect } from 'react';
-import { 
-  Navigation, 
-  Clock, 
-  Gauge, 
-  MapPin
-} from 'lucide-react';
+import React from 'react';
+import { Car, Clock, TrendingUp, Navigation, MapPin } from 'lucide-react';
 import { useSocket } from '../../contexts/SocketContext';
-import { clsx } from 'clsx';
+import clsx from 'clsx';
 
-interface DashboardStats {
-  totalTrips: number;
-  totalDistance: number;
-  avgSpeed: number;
-}
+const Dashboard: React.FC = () => {
+  const { connected } = useSocket();
 
-export default function Dashboard() {
-  const { vehicleStatus } = useSocket();
-  const [stats, setStats] = useState<DashboardStats>({
-    totalTrips: 0,
-    totalDistance: 0,
-    avgSpeed: 0
-  });
-
-  const currentVehicle = Object.values(vehicleStatus)[0]; // Get first vehicle for demo
-
-  useEffect(() => {
-    // Simulate loading stats
-    setStats({
-      totalTrips: 24,
-      totalDistance: 1247.5,
-      avgSpeed: 45.2
-    });
-  }, [currentVehicle]);
+  const stats = {
+    totalTrips: 24,
+    totalDistance: 1247.5,
+    averageSpeed: 42.3,
+    lastUpdate: new Date().toLocaleTimeString()
+  };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 p-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600 mt-1">Vehicle monitoring and tracking center</p>
-        </div>
-        
-        {currentVehicle && (
-          <div className="flex items-center space-x-3 mt-4 sm:mt-0">
-            <div className={clsx(
-              'px-3 py-2 rounded-lg text-sm font-medium',
-              currentVehicle.ignitionOn 
-                ? 'bg-green-100 text-green-800' 
-                : 'bg-gray-100 text-gray-800'
-            )}>
-              Engine: {currentVehicle.ignitionOn ? 'ON' : 'OFF'}
-            </div>
-            <div className={clsx(
-              'px-3 py-2 rounded-lg text-sm font-medium',
-              currentVehicle.isMoving 
-                ? 'bg-blue-100 text-blue-800' 
-                : 'bg-gray-100 text-gray-800'
-            )}>
-              Status: {currentVehicle.isMoving ? 'MOVING' : 'STOPPED'}
-            </div>
-          </div>
-        )}
+      <div className="text-center mb-8">
+        <h1 className="text-3xl font-bold text-gradient mb-2">Vehicle Dashboard</h1>
+        <p className="text-dark-text-muted">Real-time tracking and analytics</p>
       </div>
 
-      {/* Stats Grid - Only 3 cards now */}
+      {/* Live Status Banner */}
+      <div className={clsx(
+        "modern-card p-6 border-2 transition-all duration-300",
+        connected ? "border-accent-emerald/30 glow-effect" : "border-accent-red/30"
+      )}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <div className={clsx(
+              "relative p-3 rounded-xl",
+              connected ? "bg-accent-emerald/20" : "bg-accent-red/20"
+            )}>
+              <Navigation className={clsx(
+                "w-8 h-8",
+                connected ? "text-accent-emerald" : "text-accent-red"
+              )} />
+              {connected && (
+                <div className="absolute -top-1 -right-1 w-4 h-4 bg-accent-emerald rounded-full pulse-live"></div>
+              )}
+            </div>
+            <div>
+              <h2 className={clsx(
+                "text-xl font-bold",
+                connected ? "text-accent-emerald" : "text-accent-red"
+              )}>
+                {connected ? "LIVE TRACKING ACTIVE" : "TRACKING OFFLINE"}
+              </h2>
+              <p className="text-dark-text-muted">
+                {connected ? "Vehicle location updating in real-time" : "Reconnecting to GPS system..."}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Total Trips */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+        <div className="modern-card p-6 animated-border">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Navigation className="w-6 h-6 text-blue-600" />
+              <div className="p-3 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl">
+                <Car className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900">Total Trips</h3>
-                <p className="text-sm text-gray-500">All time</p>
+                <h3 className="font-semibold text-dark-text">Total Trips</h3>
+                <p className="text-sm text-dark-text-muted">All time journeys</p>
               </div>
             </div>
           </div>
-          <div className="text-3xl font-bold text-gray-900 mb-2">
+          <div className="text-3xl font-bold text-gradient mb-2">
             {stats.totalTrips}
           </div>
-          <div className="text-sm text-gray-500">
-            Last trip: 2 hours ago
-          </div>
+          <div className="text-sm text-accent-emerald">+3 this week</div>
         </div>
 
         {/* Total Distance */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+        <div className="modern-card p-6 animated-border">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-3">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <MapPin className="w-6 h-6 text-green-600" />
+              <div className="p-3 bg-gradient-to-br from-accent-cyan to-blue-600 rounded-xl">
+                <MapPin className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900">Total Distance</h3>
-                <p className="text-sm text-gray-500">All time</p>
+                <h3 className="font-semibold text-dark-text">Total Distance</h3>
+                <p className="text-sm text-dark-text-muted">Kilometers traveled</p>
               </div>
             </div>
           </div>
-          <div className="text-3xl font-bold text-gray-900 mb-2">
-            {stats.totalDistance.toFixed(1)}
-            <span className="text-lg text-gray-500 ml-1">km</span>
+          <div className="text-3xl font-bold text-gradient mb-2">
+            {stats.totalDistance.toLocaleString()} km
           </div>
-          <div className="text-sm text-gray-500">
-            Last updated: {currentVehicle?.lastUpdate ? new Date(currentVehicle.lastUpdate).toLocaleTimeString() : "N/A"}
-          </div>
+          <div className="text-sm text-accent-cyan">+127 km this week</div>
         </div>
 
         {/* Average Speed */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+        <div className="modern-card p-6 animated-border">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-3">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <Gauge className="w-6 h-6 text-purple-600" />
+              <div className="p-3 bg-gradient-to-br from-accent-emerald to-green-600 rounded-xl">
+                <TrendingUp className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900">Avg Speed</h3>
-                <p className="text-sm text-gray-500">This month</p>
+                <h3 className="font-semibold text-dark-text">Average Speed</h3>
+                <p className="text-sm text-dark-text-muted">Across all trips</p>
               </div>
             </div>
           </div>
-          <div className="text-3xl font-bold text-gray-900 mb-2">
-            {stats.avgSpeed.toFixed(1)}
-            <span className="text-lg text-gray-500 ml-1">km/h</span>
+          <div className="text-3xl font-bold text-gradient mb-2">
+            {stats.averageSpeed} km/h
           </div>
-          <div className="text-sm text-gray-500">
-            Current: {(currentVehicle as any)?.speed || 0} km/h
-          </div>
+          <div className="text-sm text-accent-emerald">Optimal range</div>
         </div>
       </div>
 
-      {/* Quick Actions */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+      {/* Recent Activity */}
+      <div className="modern-card p-6">
         <div className="flex items-center space-x-3 mb-6">
-          <div className="p-2 bg-blue-100 rounded-lg">
-            <Clock className="w-6 h-6 text-blue-600" />
+          <div className="p-2 bg-gradient-to-br from-primary-500 to-accent-cyan rounded-lg">
+            <Clock className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h3 className="font-semibold text-gray-900">Quick Actions</h3>
-            <p className="text-sm text-gray-500">Manage your tracking system</p>
+            <h3 className="font-semibold text-dark-text">Recent Activity</h3>
+            <p className="text-sm text-dark-text-muted">Latest system events</p>
           </div>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <button className="p-4 text-left bg-blue-50 hover:bg-blue-100 rounded-lg border border-blue-200 transition-colors">
-            <div className="font-medium text-blue-900">View Live Map</div>
-            <div className="text-sm text-blue-600 mt-1">Real-time location tracking</div>
-          </button>
+        <div className="space-y-4">
+          <div className="flex items-center space-x-4 p-4 bg-gradient-to-r from-accent-emerald/10 to-transparent rounded-xl border border-accent-emerald/20">
+            <div className="w-3 h-3 bg-accent-emerald rounded-full pulse-live"></div>
+            <div className="flex-1">
+              <div className="font-medium text-dark-text">GPS Signal Acquired</div>
+              <div className="text-sm text-dark-text-muted">NavIC satellite connection established</div>
+            </div>
+            <div className="text-sm text-dark-text-muted">{stats.lastUpdate}</div>
+          </div>
           
-          <button className="p-4 text-left bg-green-50 hover:bg-green-100 rounded-lg border border-green-200 transition-colors">
-            <div className="font-medium text-green-900">Trip History</div>
-            <div className="text-sm text-green-600 mt-1">View past journeys</div>
-          </button>
+          <div className="flex items-center space-x-4 p-4 bg-gradient-to-r from-primary-500/10 to-transparent rounded-xl border border-primary-500/20">
+            <div className="w-3 h-3 bg-primary-500 rounded-full"></div>
+            <div className="flex-1">
+              <div className="font-medium text-dark-text">Trip Completed</div>
+              <div className="text-sm text-dark-text-muted">Journey from Home to Office (15.2 km)</div>
+            </div>
+            <div className="text-sm text-dark-text-muted">2 hours ago</div>
+          </div>
           
-          <button className="p-4 text-left bg-purple-50 hover:bg-purple-100 rounded-lg border border-purple-200 transition-colors">
-            <div className="font-medium text-purple-900">Settings</div>
-            <div className="text-sm text-purple-600 mt-1">Configure tracking options</div>
-          </button>
+          <div className="flex items-center space-x-4 p-4 bg-gradient-to-r from-accent-cyan/10 to-transparent rounded-xl border border-accent-cyan/20">
+            <div className="w-3 h-3 bg-accent-cyan rounded-full"></div>
+            <div className="flex-1">
+              <div className="font-medium text-dark-text">System Status Check</div>
+              <div className="text-sm text-dark-text-muted">All systems operational</div>
+            </div>
+            <div className="text-sm text-dark-text-muted">5 hours ago</div>
+          </div>
         </div>
       </div>
     </div>
   );
-} 
+};
+
+export default Dashboard;

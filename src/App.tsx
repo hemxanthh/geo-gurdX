@@ -22,11 +22,16 @@ const App: React.FC = () => {
   if (isLoading) {
     console.log('App: Showing loading screen');
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-800 via-blue-800 to-indigo-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-dark-bg via-primary-900 to-dark-bg flex items-center justify-center">
         <div className="text-center">
-          <div className="w-8 h-8 border-2 border-white border-t-transparent border-solid rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-white/80 text-sm">Initializing Geo Guard-X...</p>
-          <p className="text-white/60 text-xs mt-1">Setting up your dashboard</p>
+          <div className="w-12 h-12 border-4 border-primary-500 border-t-transparent border-solid rounded-full spinner-modern mx-auto mb-6"></div>
+          <div className="modern-card p-6 max-w-md">
+            <h3 className="text-xl font-bold text-gradient mb-2">GeoGuard Initializing</h3>
+            <p className="text-dark-text-muted text-sm">Setting up your anti-theft dashboard</p>
+            <div className="w-full bg-dark-card h-2 rounded-full mt-4 overflow-hidden">
+              <div className="h-full bg-gradient-to-r from-primary-500 to-accent-cyan rounded-full animate-pulse"></div>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -64,7 +69,7 @@ const App: React.FC = () => {
 
   return (
     <SocketProvider>
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gradient-to-br from-dark-bg via-primary-900/20 to-dark-bg">
         <Header onMenuClick={() => setSidebarOpen(true)} />
         <div className="flex">
           <Sidebar
@@ -73,8 +78,8 @@ const App: React.FC = () => {
             currentPage={currentPage}
             onPageChange={setCurrentPage}
           />
-          <main className="flex-1 p-6 lg:ml-0">
-            <div className="max-w-7xl mx-auto">
+          <main className="flex-1 p-4 sm:p-6 lg:ml-0 mobile-content">
+            <div className="max-w-7xl mx-auto fade-in">
               {renderCurrentPage()}
             </div>
           </main>

@@ -3,7 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import { LatLngTuple } from 'leaflet';
 import { Icon } from 'leaflet';
 import { useSocket } from '../../contexts/SocketContext';
-import { Power, Navigation, Route, Unlock } from 'lucide-react';
+import { Power, Navigation, Route } from 'lucide-react';
 import { buildApiUrl } from '../../config/api';
 import clsx from 'clsx';
 import 'leaflet/dist/leaflet.css';
@@ -188,14 +188,6 @@ export default function LiveMap() {
     }
   };
 
-  const handleRemoteUnlock = () => {
-    console.log("Remote unlock button pressed");
-    setNotifications(prev => [
-      { id: Date.now(), message: "Remote unlock command sent", time: "Just now", type: "info" },
-      ...prev.slice(0, 4)
-    ]);
-  };
-
   const handleCenterOnVehicle = () => {
     if (currentVehicle && mapRef.current) {
       const coords = getVehicleCoordinates(currentVehicle);
@@ -291,18 +283,6 @@ export default function LiveMap() {
           >
             <Route className="w-4 h-4" />
             <span>{showRouteTrail ? 'Hide Trail' : 'Show Trail'}</span>
-          </button>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="bg-white rounded-lg shadow-lg p-3">
-          <div className="text-xs text-gray-500 mb-2">Quick Actions</div>
-          <button
-            onClick={handleRemoteUnlock}
-            className="w-full py-2 px-3 bg-purple-100 text-purple-700 hover:bg-purple-200 border border-purple-200 rounded-lg font-medium transition-all duration-200 text-sm flex items-center justify-center space-x-2"
-          >
-            <Unlock className="w-4 h-4" />
-            <span>Remote Unlock</span>
           </button>
         </div>
       </div>
