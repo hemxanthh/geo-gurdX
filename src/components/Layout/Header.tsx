@@ -7,9 +7,10 @@ import clsx from 'clsx';
 
 interface HeaderProps {
   onMenuClick: () => void;
+  onSettingsClick?: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
+const Header: React.FC<HeaderProps> = ({ onMenuClick, onSettingsClick }) => {
   const { profile, logout } = useAuth();
   const { connected, alerts } = useSocket();
   const [showProfile, setShowProfile] = useState(false);
@@ -107,6 +108,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
 
             {/* Settings */}
             <button 
+              onClick={onSettingsClick}
               className="p-2 rounded-xl bg-dark-card/50 text-dark-text-muted hover:text-dark-text hover:bg-primary-600/20 transition-all duration-300 border border-white/5"
               aria-label="Settings"
             >

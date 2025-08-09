@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Home, Map, History, Settings, Navigation, Zap } from 'lucide-react';
+import { X, Home, Map, History, Navigation, Zap } from 'lucide-react';
 import { clsx } from 'clsx';
 
 interface SidebarProps {
@@ -32,13 +32,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentPage, onPageC
       icon: History, 
       description: 'Past Journeys & Routes',
       gradient: 'from-accent-cyan to-blue-600'
-    },
-    { 
-      id: 'settings', 
-      label: 'Settings', 
-      icon: Settings, 
-      description: 'System Configuration',
-      gradient: 'from-slate-500 to-slate-600'
     },
   ];
 

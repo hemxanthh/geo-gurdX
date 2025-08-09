@@ -70,7 +70,10 @@ const App: React.FC = () => {
   return (
     <SocketProvider>
       <div className="min-h-screen bg-gradient-to-br from-dark-bg via-primary-900/20 to-dark-bg">
-        <Header onMenuClick={() => setSidebarOpen(true)} />
+        <Header 
+          onMenuClick={() => setSidebarOpen(true)} 
+          onSettingsClick={() => setCurrentPage('settings')}
+        />
         <div className="flex">
           <Sidebar
             isOpen={sidebarOpen}
