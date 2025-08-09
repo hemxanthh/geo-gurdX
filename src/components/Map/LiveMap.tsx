@@ -3,8 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import { LatLngTuple } from 'leaflet';
 import { Icon } from 'leaflet';
 import { useSocket } from '../../contexts/SocketContext';
-import { Power, Navigation, Route } from 'lucide-react';
-import { buildApiUrl } from '../../config/api';
+import { Navigation, Route } from 'lucide-react';
 import clsx from 'clsx';
 import 'leaflet/dist/leaflet.css';
 
@@ -144,50 +143,6 @@ export default function LiveMap() {
   };
 
   // Control Functions
-  const handleToggleIgnition = async () => {
-    try {
-      setNotifications(prev => [
-        { id: Date.now(), message: "Processing ignition toggle...", time: "Just now", type: "info" },
-        ...prev.slice(0, 4)
-      ]);
-
-      const response = await fetch(buildApiUrl('/toggle-ignition'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const result = await response.json();
-      console.log('Ignition toggle result:', result);
-
-      setNotifications(prev => [
-        { 
-          id: Date.now(), 
-          message: result.message || "Ignition toggled successfully", 
-          time: "Just now", 
-          type: "success" 
-        },
-        ...prev.slice(1, 4)
-      ]);
-    } catch (error) {
-      console.error("Error toggling ignition:", error);
-      setNotifications(prev => [
-        { 
-          id: Date.now(), 
-          message: "Failed to toggle ignition. Please check connection and try again.", 
-          time: "Just now", 
-          type: "error" 
-        },
-        ...prev.slice(1, 4)
-      ]);
-    }
-  };
-
   const handleCenterOnVehicle = () => {
     if (currentVehicle && mapRef.current) {
       const coords = getVehicleCoordinates(currentVehicle);
@@ -239,30 +194,11 @@ export default function LiveMap() {
         </div>
       </div>
 
-      {/* Vehicle Control Panel */}
-      <div className="absolute top-4 left-4 z-[1000] space-y-2">
-        {/* Ignition Control */}
-        <div className="bg-white rounded-lg shadow-lg p-3">
-          <div className="text-xs text-gray-500 mb-2">Engine Control</div>
-          <button
-            onClick={handleToggleIgnition}
-            className={clsx(
-              "w-full py-2 px-3 rounded-lg font-medium transition-all duration-200 text-sm flex items-center justify-center space-x-2",
-              currentVehicle && getVehicleStatus(currentVehicle).ignitionOn
-                ? "bg-red-100 text-red-700 hover:bg-red-200 border border-red-200"
-                : "bg-green-100 text-green-700 hover:bg-green-200 border border-green-200"
-            )}
-          >
-            <Power className="w-4 h-4" />
-            <span>
-              {currentVehicle && getVehicleStatus(currentVehicle).ignitionOn ? 'Turn OFF' : 'Turn ON'}
-            </span>
-          </button>
-        </div>
-
+      {/* Navigation Panel */}
+      <div className="absolute top-4 left-4 z-[1000]">
         {/* Navigation Controls */}
         <div className="bg-white rounded-lg shadow-lg p-3 space-y-2">
-          <div className="text-xs text-gray-500 mb-2">Navigation</div>
+          <div className="text-xs text-gray-500 mb-2">Navigation Controls</div>
           
           <button
             onClick={handleCenterOnVehicle}

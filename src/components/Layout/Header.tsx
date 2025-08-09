@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Bell, Menu, Navigation, Zap, Wifi, WifiOff, Settings } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSocket } from '../../contexts/SocketContext';
+import AlertsPanel from '../Alerts/AlertsPanel';
 import clsx from 'clsx';
 
 interface HeaderProps {
@@ -10,8 +11,9 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
   const { profile, logout } = useAuth();
-  const { connected } = useSocket();
+  const { connected, alerts } = useSocket();
   const [showProfile, setShowProfile] = useState(false);
+  const [showAlerts, setShowAlerts] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const handleSignOut = async () => {
@@ -113,13 +115,16 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
 
             {/* Notifications */}
             <button 
+              onClick={() => setShowAlerts(!showAlerts)}
               className="relative p-2 rounded-xl bg-dark-card/50 text-dark-text-muted hover:text-dark-text hover:bg-primary-600/20 transition-all duration-300 border border-white/5"
               aria-label="View notifications"
             >
               <Bell className="w-5 h-5" />
-              <span className="absolute -top-1 -right-1 w-4 h-4 bg-accent-orange rounded-full text-xs flex items-center justify-center text-white font-medium">
-                0
-              </span>
+              {alerts.filter(alert => !alert.isRead).length > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-accent-orange rounded-full text-xs flex items-center justify-center text-white font-medium">
+                  {alerts.filter(alert => !alert.isRead).length}
+                </span>
+              )}
             </button>
 
             {/* User Profile */}
@@ -206,6 +211,12 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
           onClick={() => setShowProfile(false)}
         />
       )}
+
+      {/* Alerts Panel */}
+      <AlertsPanel 
+        isOpen={showAlerts}
+        onClose={() => setShowAlerts(false)}
+      />
     </header>
   );
 };

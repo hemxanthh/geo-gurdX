@@ -1,16 +1,45 @@
 import React from 'react';
-import { Car, Clock, TrendingUp, Navigation, MapPin } from 'lucide-react';
+import { Car, Clock, TrendingUp, Navigation, MapPin, AlertTriangle, Shield, Bell, ExternalLink } from 'lucide-react';
 import { useSocket } from '../../contexts/SocketContext';
 import clsx from 'clsx';
 
-const Dashboard: React.FC = () => {
-  const { connected } = useSocket();
+interface DashboardProps {
+  onNavigateToMap?: () => void;
+}
+
+const Dashboard: React.FC<DashboardProps> = ({ onNavigateToMap }) => {
+  const { connected, alerts } = useSocket();
 
   const stats = {
     totalTrips: 24,
     totalDistance: 1247.5,
     averageSpeed: 42.3,
     lastUpdate: new Date().toLocaleTimeString()
+  };
+
+  const getSeverityColor = (severity: string) => {
+    switch (severity) {
+      case 'critical': return 'text-red-400 bg-red-500/20 border-red-500/30';
+      case 'high': return 'text-orange-400 bg-orange-500/20 border-orange-500/30';
+      case 'medium': return 'text-yellow-400 bg-yellow-500/20 border-yellow-500/30';
+      case 'low': return 'text-blue-400 bg-blue-500/20 border-blue-500/30';
+      default: return 'text-gray-400 bg-gray-500/20 border-gray-500/30';
+    }
+  };
+
+  const getAlertIcon = (type: string) => {
+    switch (type) {
+      case 'unauthorized_movement':
+      case 'geofence_breach':
+        return AlertTriangle;
+      case 'ignition_tamper':
+      case 'low_battery':
+        return Bell;
+      case 'emergency':
+        return AlertTriangle;
+      default:
+        return Shield;
+    }
   };
 
   return (
@@ -23,9 +52,9 @@ const Dashboard: React.FC = () => {
 
       {/* Live Status Banner */}
       <div className={clsx(
-        "modern-card p-6 border-2 transition-all duration-300",
+        "modern-card p-6 border-2 transition-all duration-300 cursor-pointer hover:scale-[1.02]",
         connected ? "border-accent-emerald/30 glow-effect" : "border-accent-red/30"
-      )}>
+      )} onClick={onNavigateToMap}>
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <div className={clsx(
@@ -42,13 +71,14 @@ const Dashboard: React.FC = () => {
             </div>
             <div>
               <h2 className={clsx(
-                "text-xl font-bold",
+                "text-xl font-bold flex items-center gap-2",
                 connected ? "text-accent-emerald" : "text-accent-red"
               )}>
                 {connected ? "LIVE TRACKING ACTIVE" : "TRACKING OFFLINE"}
+                {connected && <ExternalLink className="w-5 h-5 text-accent-emerald/60" />}
               </h2>
               <p className="text-dark-text-muted">
-                {connected ? "Vehicle location updating in real-time" : "Reconnecting to GPS system..."}
+                {connected ? "Click to view real-time location on map" : "Reconnecting to GPS system..."}
               </p>
             </div>
           </div>
@@ -155,6 +185,105 @@ const Dashboard: React.FC = () => {
             <div className="text-sm text-dark-text-muted">5 hours ago</div>
           </div>
         </div>
+      </div>
+
+      {/* Security Alerts Section */}
+      <div className="modern-card p-6">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 bg-gradient-to-br from-red-500 to-orange-500 rounded-lg">
+              <AlertTriangle className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-dark-text text-lg">Security Alerts</h3>
+              <p className="text-sm text-dark-text-muted">Vehicle security and safety notifications</p>
+            </div>
+          </div>
+          <div className="flex items-center space-x-3">
+            {alerts.filter(alert => !alert.isRead).length > 0 && (
+              <div className="bg-red-500/20 text-red-400 px-3 py-1 rounded-full text-sm font-medium">
+                {alerts.filter(alert => !alert.isRead).length} Unread
+              </div>
+            )}
+            <div className="bg-primary-500/20 text-primary-400 px-3 py-1 rounded-full text-sm font-medium">
+              {alerts.length} Total
+            </div>
+          </div>
+        </div>
+        
+        {alerts.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="w-16 h-16 bg-accent-emerald/20 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Shield className="w-8 h-8 text-accent-emerald" />
+            </div>
+            <h4 className="text-lg font-semibold text-dark-text mb-2">All Clear!</h4>
+            <p className="text-dark-text-muted">No security alerts detected. Your vehicle is secure.</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {alerts.slice(0, 5).map((alert) => {
+              const IconComponent = getAlertIcon(alert.type);
+              return (
+                <div key={alert.id} className={clsx(
+                  "flex items-center space-x-4 p-4 rounded-xl border transition-all duration-200 hover:scale-[1.01]",
+                  getSeverityColor(alert.severity),
+                  !alert.isRead && "ring-1 ring-current"
+                )}>
+                  <div className={clsx(
+                    "p-2 rounded-lg",
+                    alert.severity === 'critical' ? 'bg-red-500/30' :
+                    alert.severity === 'high' ? 'bg-orange-500/30' :
+                    alert.severity === 'medium' ? 'bg-yellow-500/30' :
+                    'bg-blue-500/30'
+                  )}>
+                    <IconComponent className="w-5 h-5" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-2">
+                      <div className="font-medium text-dark-text capitalize">
+                        {alert.type.replace('_', ' ')}
+                      </div>
+                      {!alert.isRead && (
+                        <div className="w-2 h-2 bg-current rounded-full"></div>
+                      )}
+                    </div>
+                    <div className="text-sm text-dark-text-muted">{alert.message}</div>
+                    {alert.location && (
+                      <div className="text-xs text-dark-text-muted mt-1 flex items-center space-x-1">
+                        <MapPin className="w-3 h-3" />
+                        <span>Location: {alert.location.lat?.toFixed(4)}, {alert.location.lng?.toFixed(4)}</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="text-right space-y-1">
+                    <div className={clsx(
+                      "text-xs font-semibold px-2 py-1 rounded-full",
+                      alert.severity === 'critical' ? 'bg-red-500/20 text-red-400' :
+                      alert.severity === 'high' ? 'bg-orange-500/20 text-orange-400' :
+                      alert.severity === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
+                      'bg-blue-500/20 text-blue-400'
+                    )}>
+                      {alert.severity.toUpperCase()}
+                    </div>
+                    <div className="text-sm text-dark-text-muted">
+                      {new Date(alert.timestamp).toLocaleTimeString()}
+                    </div>
+                    <div className="text-xs text-dark-text-muted">
+                      {new Date(alert.timestamp).toLocaleDateString()}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+            {alerts.length > 5 && (
+              <div className="text-center pt-4">
+                <div className="text-sm text-dark-text-muted">
+                  Showing 5 of {alerts.length} alerts
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -55,7 +55,7 @@ const App: React.FC = () => {
   const renderCurrentPage = () => {
     switch (currentPage) {
       case 'dashboard':
-        return <Dashboard />;
+        return <Dashboard onNavigateToMap={() => setCurrentPage('live-map')} />;
       case 'live-map':
         return <LiveMap />;
       case 'trips':
@@ -63,7 +63,7 @@ const App: React.FC = () => {
       case 'settings':
         return <Settings />;
       default:
-        return <Dashboard />;
+        return <Dashboard onNavigateToMap={() => setCurrentPage('live-map')} />;
     }
   };
 
