@@ -192,8 +192,13 @@ const AlertsPanel: React.FC<AlertsPanelProps> = ({ isOpen, onClose }) => {
                             <div className="flex items-center space-x-1">
                               <MapPin className="w-3 h-3" />
                               <span>
-                                {alert.location.lat?.toFixed(4)}, {alert.location.lng?.toFixed(4)}
+                                {alert.location.lat !== undefined && alert.location.lng !== undefined
+                                  ? `${alert.location.lat?.toFixed(4)}, ${alert.location.lng?.toFixed(4)}`
+                                  : 'No location'}
                               </span>
+                              {alert.location.speed !== undefined && (
+                                <span className="ml-2">Speed: {alert.location.speed} km/h</span>
+                              )}
                             </div>
                           )}
                         </div>

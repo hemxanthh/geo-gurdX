@@ -9,6 +9,7 @@ import Dashboard from './components/Dashboard/Dashboard';
 import LiveMap from './components/Map/LiveMap';
 import TripHistory from './components/Trips/TripHistory';
 import Settings from './components/Settings/Settings';
+import AlertsPanel from './components/Alerts/AlertsPanel';
 
 const App: React.FC = () => {
   const { user, profile, isLoading } = useAuth();
@@ -62,6 +63,8 @@ const App: React.FC = () => {
         return <TripHistory />;
       case 'settings':
         return <Settings />;
+      case 'alerts':
+        return <AlertsPanel isOpen={true} onClose={() => setCurrentPage('dashboard')} />;
       default:
         return <Dashboard onNavigateToMap={() => setCurrentPage('live-map')} />;
     }

@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Home, Map, History, Navigation, Zap } from 'lucide-react';
+import { X, Home, Map, History, Navigation, Zap, AlertTriangle } from 'lucide-react';
 import { clsx } from 'clsx';
 
 interface SidebarProps {
@@ -9,7 +9,11 @@ interface SidebarProps {
   onPageChange: (page: string) => void;
 }
 
+import { useSocket } from '../../contexts/SocketContext';
+
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentPage, onPageChange }) => {
+  const { alerts } = useSocket();
+  const unreadAlerts = alerts.filter(a => !a.isRead).length;
   const menuItems = [
     { 
       id: 'dashboard', 
@@ -25,6 +29,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentPage, onPageC
       description: 'Real-time GPS Location',
       gradient: 'from-accent-emerald to-green-600',
       highlight: true
+    },
+    { 
+      id: 'alerts',
+      label: 'Alerts',
+      icon: AlertTriangle,
+      description: 'Security & System Alerts',
+      gradient: 'from-red-500 to-orange-500',
+      badge: unreadAlerts
     },
     { 
       id: 'trips', 
@@ -104,7 +116,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentPage, onPageC
                   {!isActive && (
                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent transform -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
                   )}
-                  
                   <div className={clsx(
                     'relative p-2 rounded-xl transition-all duration-300',
                     isActive 
@@ -112,8 +123,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentPage, onPageC
                       : `bg-gradient-to-br ${item.gradient} group-hover:scale-110`
                   )}>
                     <Icon className="w-5 h-5 text-white" />
+                    {item.badge > 0 && (
+                      <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full shadow-lg">
+                        {item.badge}
+                      </span>
+                    )}
                   </div>
-                  
                   <div className="flex-1 relative z-10">
                     <div className={clsx(
                       'font-semibold text-sm',
@@ -142,7 +157,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentPage, onPageC
                       {item.description}
                     </div>
                   </div>
-                  
                   {/* Active indicator */}
                   {isActive && (
                     <div className="w-1 h-8 bg-white/50 rounded-full"></div>

@@ -186,14 +186,14 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
       if (alertsData) {
         const formattedAlerts: Alert[] = alertsData.map((alert: any) => ({
           id: alert.id,
-          vehicleId: alert.vehicle_id,
+          vehicleId: '',
           type: alert.type,
           message: alert.message,
-          location: alert.location as any,
-          timestamp: new Date(alert.created_at),
-          isRead: alert.is_read,
-          severity: alert.severity,
-          acknowledged: alert.acknowledged,
+          location: { lat: alert.lat, lng: alert.lng, speed: alert.speed },
+          timestamp: new Date(alert.alert_at),
+          isRead: false,
+          severity: 'medium',
+          acknowledged: false,
         }));
         setAlerts(formattedAlerts);
       }
@@ -263,16 +263,15 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
     if (eventType === 'INSERT') {
       const alert: Alert = {
         id: newRecord.id,
-        vehicleId: newRecord.vehicle_id,
+  vehicleId: '',
         type: newRecord.type,
         message: newRecord.message,
-        location: newRecord.location,
-        timestamp: new Date(newRecord.created_at),
-        isRead: newRecord.is_read,
-        severity: newRecord.severity,
-        acknowledged: newRecord.acknowledged,
+        location: { lat: newRecord.lat, lng: newRecord.lng, speed: newRecord.speed },
+        timestamp: new Date(newRecord.alert_at),
+        isRead: false,
+        severity: 'medium',
+        acknowledged: false,
       };
-      
       setAlerts(prev => [alert, ...prev.slice(0, 49)]);
     }
   };
