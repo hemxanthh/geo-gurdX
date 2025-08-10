@@ -179,8 +179,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
       const { data: alertsData } = await supabase
         .from('alerts')
         .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
+        .order('alert_at', { ascending: false })
         .limit(50);
 
       if (alertsData) {
