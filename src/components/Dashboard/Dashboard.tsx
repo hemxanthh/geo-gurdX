@@ -43,41 +43,41 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToMap }) => {
   };
 
   return (
-    <div className="space-y-8 p-6">
+    <div className="space-y-8 p-6 bg-slate-50 min-h-screen">
       {/* Header */}
       <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-gradient mb-2">Vehicle Dashboard</h1>
-        <p className="text-dark-text-muted">Real-time tracking and analytics</p>
+        <h1 className="text-3xl font-bold text-slate-800 mb-2">Vehicle Dashboard</h1>
+        <p className="text-slate-500">Real-time tracking and analytics</p>
       </div>
 
       {/* Live Status Banner */}
       <div className={clsx(
-        "modern-card p-6 border-2 transition-all duration-300 cursor-pointer hover:scale-[1.02]",
-        connected ? "border-accent-emerald/30 glow-effect" : "border-accent-red/30"
+        "bg-slate-100 p-6 border-2 rounded-xl shadow-md transition-all duration-300 cursor-pointer hover:scale-[1.01]",
+        connected ? "border-accent-500" : "border-accent-red"
       )} onClick={onNavigateToMap}>
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <div className={clsx(
               "relative p-3 rounded-xl",
-              connected ? "bg-accent-emerald/20" : "bg-accent-red/20"
+              connected ? "bg-accent-500/20" : "bg-accent-red/20"
             )}>
               <Navigation className={clsx(
                 "w-8 h-8",
-                connected ? "text-accent-emerald" : "text-accent-red"
+                connected ? "text-accent-500" : "text-accent-red"
               )} />
               {connected && (
-                <div className="absolute -top-1 -right-1 w-4 h-4 bg-accent-emerald rounded-full pulse-live"></div>
+                <div className="absolute -top-1 -right-1 w-4 h-4 bg-accent-500 rounded-full pulse-live"></div>
               )}
             </div>
             <div>
               <h2 className={clsx(
                 "text-xl font-bold flex items-center gap-2",
-                connected ? "text-accent-emerald" : "text-accent-red"
+                connected ? "text-accent-500" : "text-accent-red"
               )}>
                 {connected ? "LIVE TRACKING ACTIVE" : "TRACKING OFFLINE"}
-                {connected && <ExternalLink className="w-5 h-5 text-accent-emerald/60" />}
+                {connected && <ExternalLink className="w-5 h-5 text-accent-500/60" />}
               </h2>
-              <p className="text-dark-text-muted">
+              <p className="text-slate-500">
                 {connected ? "Click to view real-time location on map" : "Reconnecting to GPS system..."}
               </p>
             </div>

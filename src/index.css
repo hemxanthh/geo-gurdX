@@ -7,27 +7,28 @@
 
 /* Modern CSS Variables for Dark Theme */
 :root {
-  --primary-50: #f0f4ff;
-  --primary-100: #e0e9ff;
-  --primary-200: #c7d8ff;
-  --primary-300: #a5bbff;
-  --primary-400: #8191ff;
-  --primary-500: #6366f1;
-  --primary-600: #4f46e5;
-  --primary-700: #4338ca;
-  --primary-800: #3730a3;
-  --primary-900: #312e81;
+  --primary-50: #f8fafc;
+  --primary-100: #f1f5f9;
+  --primary-200: #e2e8f0;
+  --primary-300: #cbd5e1;
+  --primary-400: #94a3b8;
+  --primary-500: #64748b;
+  --primary-600: #475569;
+  --primary-700: #334155;
+  --primary-800: #1e293b;
+  --primary-900: #0f172a;
   
-  --dark-bg: #0f0f23;
-  --dark-card: #1a1a2e;
-  --dark-border: #16213e;
-  --dark-text: #e2e8f0;
-  --dark-text-muted: #94a3b8;
+  --light-bg: #f8fafc;
+  --light-card: #f1f5f9;
+  --light-border: #e2e8f0;
+  --light-text: #334155;
+  --light-text-muted: #64748b;
   
-  --accent-cyan: #06b6d4;
-  --accent-emerald: #10b981;
-  --accent-orange: #f59e0b;
+  --accent-500: #10b981;
   --accent-red: #ef4444;
+  --accent-orange: #f59e0b;
+  --accent-emerald: #10b981;
+  --accent-cyan: #06b6d4;
 }
 
 /* Base Styles */
@@ -37,8 +38,8 @@
 }
 
 body {
-  background: linear-gradient(135deg, var(--dark-bg) 0%, #1a1a2e 100%);
-  color: var(--dark-text);
+  background: var(--light-bg);
+  color: var(--light-text);
   overflow-x: hidden;
 }
 
@@ -63,12 +64,12 @@ body {
 
 /* Modern Glass Effect */
 .glass-effect {
-  background: rgba(26, 26, 46, 0.8);
-  backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(241, 245, 249, 0.8);
+  backdrop-filter: blur(12px) saturate(180%);
+  border: 1px solid var(--light-border);
   box-shadow: 
-    0 25px 50px -12px rgba(0, 0, 0, 0.25),
-    0 0 0 1px rgba(255, 255, 255, 0.05);
+    0 8px 24px -8px rgba(0,0,0,0.08),
+    0 0 0 1px var(--light-border);
 }
 
 /* Gradient Backgrounds */
@@ -90,23 +91,16 @@ body {
 
 /* Modern Card Styling */
 .modern-card {
-  background: linear-gradient(145deg, rgba(26, 26, 46, 0.9), rgba(22, 33, 62, 0.9));
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 24px;
-  box-shadow: 
-    0 20px 40px -12px rgba(0, 0, 0, 0.3),
-    0 8px 16px -8px rgba(99, 102, 241, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  background: var(--light-card);
+  border: 1px solid var(--light-border);
+  border-radius: 20px;
+  box-shadow: 0 8px 24px -8px rgba(0,0,0,0.08);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .modern-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 
-    0 32px 64px -12px rgba(0, 0, 0, 0.4),
-    0 16px 32px -8px rgba(99, 102, 241, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
+  box-shadow: 0 16px 32px -8px rgba(0,0,0,0.12);
 }
 
 /* Animated Borders */
@@ -230,6 +224,12 @@ body {
 .btn-modern {
   position: relative;
   overflow: hidden;
+  background: var(--light-card);
+  color: var(--light-text);
+  border: 1px solid var(--light-border);
+  border-radius: 8px;
+  padding: 0.5rem 1.25rem;
+  font-weight: 500;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -246,6 +246,7 @@ body {
 
 .btn-modern:hover::before {
   left: 100%;
+  background: linear-gradient(90deg, transparent, var(--accent-500), transparent);
 }
 
 /* Status Indicators */
