@@ -1,0 +1,295 @@
+/*
+   ESP32 Vehicle Tracker + Dynamic Geofence + Motion-stop Reset
+   - GPS/NavIC (TinyGPS++) UART2 pins 16/17
+   - MPU6050 motion detection on I2C SDA 21 / SCL 22
+   - SPST ignition switch on GPIO15
+   - Supabase REST v1 integration
+*/
+
+#include <Wire.h>
+#include <WiFi.h>
+#include <HTTPClient.h>
+#include <ArduinoJson.h>
+#include <TinyGPS++.h>
+#include <HardwareSerial.h>
+#include <MPU6050_tockn.h>
+
+// ====== USER CONFIG ======
+#define SDA_PIN 21
+#define SCL_PIN 22
+#define GPS_RX_PIN 16
+#define GPS_TX_PIN 17
+#define SWITCH_PIN 15
+
+const char* ssid     = "YOUR_WIFI";
+const char* password = "YOUR_PASS";
+const char* supabaseKey  = "YOUR_SUPABASE_KEY";
+
+const char* url_locations = "https://PROJECT.supabase.co/rest/v1/locations";
+const char* url_alerts    = "https://PROJECT.supabase.co/rest/v1/alerts";
+
+// Motion detection thresholds
+float motionAccThreshold  = 0.30;  // GPS available
+const float motionGyroThreshold = 20.0;
+const unsigned long motionDuration = 10000; // ms
+const double towThresholdM = 10.0;          // meters
+
+// Motion-only mode (GPS unavailable)
+const float motionAccThreshold_NoGPS = 0.10;
+const unsigned long motionDuration_NoGPS = 3000; // ms
+const float motionGyroThreshold_NoGPS = 1.0;   // more sensitive when GPS is unavailable
+
+
+// Geofence config
+const double geofenceRadiusM = 300.0; // meters
+
+// Telemetry interval (ignition ON)
+const unsigned long SEND_INTERVAL_ON = 10000; // ms
+
+// ====== GLOBAL VARS ======
+MPU6050 mpu(Wire);
+TinyGPSPlus gps;
+HardwareSerial gpsSerial(2);
+
+bool ignitionOn = false, prevIgnitionOn = false;
+unsigned long lastSwitchChange = 0;
+const unsigned long debounceMs = 50;
+
+bool isMoving = false, towAlertSent = false, geofenceAlertSent = false;
+unsigned long motionStartTime = 0;
+
+double lat = 0.0, lng = 0.0, speed_kmh = 0.0;
+bool gpsValid = false;
+
+// Tow snapshot
+double parkLat = 0.0, parkLng = 0.0;
+
+// Geofence snapshot
+double geofenceCenterLat = 0.0, geofenceCenterLng = 0.0;
+
+unsigned long lastSendTime = 0;
+
+// ====== FUNCTION DECLARATIONS ======
+void connectWiFi();
+void readIgnition();
+void readGPS();
+double haversine(double, double, double, double);
+void takeGeofenceSnapshot();
+void monitorTow();
+void checkGeofenceBreach();
+void sendLocationTelemetry(bool useIgnOverride=false, bool overrideVal=false);
+void sendAlertEvent(String type, String message);
+
+// ====== SETUP ======
+void setup() {
+  Serial.begin(115200);
+  Serial.println("\n--- System Boot ---");
+
+  Wire.begin(SDA_PIN, SCL_PIN);
+  Serial.println("Initializing MPU6050...");
+  mpu.begin();
+  mpu.calcGyroOffsets(true);
+  Serial.println("MPU6050 ready");
+
+  pinMode(SWITCH_PIN, INPUT_PULLUP);
+  gpsSerial.begin(115200, SERIAL_8N1, GPS_RX_PIN, GPS_TX_PIN);
+
+  connectWiFi();
+}
+
+// ====== LOOP ======
+void loop() {
+  readIgnition();
+  readGPS();
+
+  // Ignition change
+  if (ignitionOn != prevIgnitionOn) {
+    if (!ignitionOn) {
+      takeGeofenceSnapshot();
+      towAlertSent = false;
+      geofenceAlertSent = false;
+      if (gpsValid) {
+        Serial.println("➡ Sending FINAL LOCATION (Ignition OFF)");
+        sendLocationTelemetry(true, false);
+      }
+    } else {
+      isMoving = false;
+      towAlertSent = false;
+      geofenceAlertSent = false;
+    }
+  }
+
+  if (!ignitionOn) {
+    monitorTow();
+  }
+
+  if (ignitionOn) {
+    if (gpsValid) {
+      checkGeofenceBreach();
+      if (millis() - lastSendTime >= SEND_INTERVAL_ON) {
+        sendLocationTelemetry();
+        lastSendTime = millis();
+      }
+    } else {
+      Serial.println("⚠ GPS signal not available");
+    }
+  }
+
+  prevIgnitionOn = ignitionOn;
+  delay(50);
+}
+
+// ====== FUNCTIONS ======
+void connectWiFi() {
+  WiFi.begin(ssid, password);
+  Serial.printf("Connecting to Wi-Fi '%s'", ssid);
+  unsigned long start=millis();
+  while (WiFi.status() != WL_CONNECTED && millis()-start < 20000) {
+    Serial.print(".");
+    delay(500);
+  }
+  Serial.println(WiFi.status() == WL_CONNECTED ? "\n✅ Wi-Fi connected" : "\n❌ Wi-Fi failed");
+}
+
+void readIgnition() {
+  bool curState = (digitalRead(SWITCH_PIN) == LOW);
+  if (curState != ignitionOn && millis()-lastSwitchChange > debounceMs) {
+    ignitionOn = curState;
+    lastSwitchChange = millis();
+    Serial.printf("Ignition: %s\n", ignitionOn ? "ON" : "OFF");
+  }
+}
+
+void readGPS() {
+  while (gpsSerial.available()) gps.encode(gpsSerial.read());
+  if (gps.location.isValid() && gps.location.age() < 15000) {
+    lat = gps.location.lat();
+    lng = gps.location.lng();
+    speed_kmh = gps.speed.isValid() ? gps.speed.kmph() : NAN;
+    gpsValid = true;
+  } else gpsValid = false;
+}
+
+double haversine(double lat1, double lon1, double lat2, double lon2) {
+  const double R=6371000.0;
+  double dLat=radians(lat2-lat1), dLon=radians(lon2-lon1);
+  double a=sin(dLat/2)*sin(dLat/2) + cos(radians(lat1))*cos(radians(lat2))*sin(dLon/2)*sin(dLon/2);
+  return R * 2 * atan2(sqrt(a), sqrt(1-a));
+}
+
+void takeGeofenceSnapshot() {
+  if (gpsValid) {
+    parkLat = lat; parkLng = lng;
+    geofenceCenterLat = lat; geofenceCenterLng = lng;
+    Serial.printf("--- Geofence set @ [%.6f, %.6f] radius=%.1fm ---\n",
+                  geofenceCenterLat, geofenceCenterLng, geofenceRadiusM);
+  } else {
+    Serial.println("❌ No GPS fix for geofence snapshot");
+  }
+}
+
+// ====== TOW DETECTION WITH MOTION-STOP RESET ======
+void monitorTow() {
+  mpu.update();
+  float accChange = fabs(sqrt(pow(mpu.getAccX(),2) + pow(mpu.getAccY(),2) + pow(mpu.getAccZ(),2)) - 1.0f);
+  float gyroMag   = sqrt(pow(fabs(mpu.getGyroX()),2) + pow(fabs(mpu.getGyroY()),2) + pow(fabs(mpu.getGyroZ()),2));
+  
+bool motionNow = gpsValid ?
+    (accChange > motionAccThreshold) || (gyroMag > motionGyroThreshold) :
+    (accChange > motionAccThreshold_NoGPS) || (gyroMag > motionGyroThreshold_NoGPS);
+
+  if (motionNow) {
+    if (!isMoving) {
+      isMoving = true;
+      motionStartTime = millis();
+      Serial.println("📈 Tow motion detected - timer started");
+    } else if (!towAlertSent) {
+      unsigned long elapsed = millis() - motionStartTime;
+
+      if (gpsValid) {
+        double dist = haversine(parkLat, parkLng, lat, lng);
+        Serial.printf("[TowCheck GPS] Motion %lums/%lums | Dist=%.2fm\n", elapsed, motionDuration, dist);
+        if (elapsed >= motionDuration && dist >= towThresholdM) {
+          towAlertSent = true;
+          Serial.println("🚨 TOWING ALERT (GPS+Motion)");
+          sendAlertEvent("towing_alert", "Vehicle moved >10m with ignition OFF");
+        }
+      } else {
+        Serial.printf("[TowCheck NoGPS] Motion %lums/%lums\n", elapsed, motionDuration_NoGPS);
+        if (elapsed >= motionDuration_NoGPS) {
+          towAlertSent = true;
+          Serial.println("🚨 TOWING ALERT (Motion only - GPS unavailable)");
+          sendAlertEvent("towing_alert", "Vehicle motion detected with GPS unavailable");
+        }
+      }
+    }
+  } else {
+    if (isMoving) {
+      Serial.println("⏹ Motion stopped -> rearming tow detection");
+    }
+    isMoving = false;
+    towAlertSent = false; // Option 2: reset after motion stops
+  }
+}
+
+void checkGeofenceBreach() {
+  if (geofenceCenterLat == 0 && geofenceCenterLng == 0) return;
+  double dist = haversine(geofenceCenterLat, geofenceCenterLng, lat, lng);
+  if (dist > geofenceRadiusM && !geofenceAlertSent) {
+    geofenceAlertSent = true;
+    Serial.printf("🚨 GEOFENCE BREACH! Dist=%.2fm (radius=%.1fm)\n", dist, geofenceRadiusM);
+    sendAlertEvent("geofence_breach", "Vehicle exited geofence with ignition ON");
+  }
+}
+
+void sendLocationTelemetry(bool useIgnOverride, bool overrideVal) {
+  if (WiFi.status() != WL_CONNECTED) { Serial.println("No Wi-Fi - loc skipped"); return; }
+
+  HTTPClient http;
+  http.begin(url_locations);
+  http.addHeader("Content-Type", "application/json");
+  http.addHeader("apikey", supabaseKey);
+  http.addHeader("Authorization", String("Bearer ") + supabaseKey);
+  http.addHeader("Prefer", "return=minimal");
+
+  StaticJsonDocument<256> doc;
+  doc["lat"] = lat; doc["lng"] = lng;
+  if (!isnan(speed_kmh)) doc["speed"] = speed_kmh;
+  doc["ignition"] = useIgnOverride ? overrideVal : ignitionOn;
+
+  String json; serializeJson(doc, json);
+  Serial.println("📡 LOCATION: " + json);
+
+  int code = http.POST(json);
+  if (code > 0) Serial.printf("POST /locations: %d\n", code);
+  else Serial.printf("❌ POST fail: %s\n", http.errorToString(code).c_str());
+  http.end();
+}
+
+void sendAlertEvent(String type, String message) {
+  if (WiFi.status() != WL_CONNECTED) { Serial.println("No Wi-Fi - alert skipped"); return; }
+
+  HTTPClient http;
+  http.begin(url_alerts);
+  http.addHeader("Content-Type", "application/json");
+  http.addHeader("apikey", supabaseKey);
+  http.addHeader("Authorization", String("Bearer ") + supabaseKey);
+  http.addHeader("Prefer", "return=minimal");
+
+  StaticJsonDocument<256> doc;
+  doc["type"] = type;
+  doc["message"] = message;
+  doc["lat"] = gpsValid ? lat : 0;
+  doc["lng"] = gpsValid ? lng : 0;
+  if (!isnan(speed_kmh)) doc["speed"] = speed_kmh;
+
+  String json; serializeJson(doc, json);
+  Serial.println("🚀 ALERT: " + json);
+
+  int code = http.POST(json);
+  if (code > 0) Serial.printf("POST /alerts: %d\n", code);
+  else Serial.printf("❌ ALERT POST fail: %s\n", http.errorToString(code).c_str());
+  http.end();
+}
+
+// worked with gps off incase while igniton on / off works with motion sensor .
