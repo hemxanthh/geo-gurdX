@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Home, Map, History, Navigation, Zap, AlertTriangle } from 'lucide-react';
+import { X, Home, Map, Navigation, Zap, AlertTriangle } from 'lucide-react';
 import { clsx } from 'clsx';
 
 interface SidebarProps {
@@ -37,13 +37,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentPage, onPageC
       description: 'Security & System Alerts',
       gradient: 'from-red-500 to-orange-500',
       badge: unreadAlerts
-    },
-    { 
-      id: 'trips', 
-      label: 'Trip History', 
-      icon: History, 
-      description: 'Past Journeys & Routes',
-      gradient: 'from-accent-cyan to-blue-600'
     },
   ];
 
