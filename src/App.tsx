@@ -1,8 +1,5 @@
 import React, { useState } from 'react';
-import { useAuth } from './contexts/AuthContext';
 import { SocketProvider } from './contexts/SocketContext';
-import LoginForm from './components/Auth/LoginForm';
-import RegistrationForm from './components/Auth/RegistrationForm';
 import Header from './components/Layout/Header';
 import Sidebar from './components/Layout/Sidebar';
 import Dashboard from './components/Dashboard/Dashboard';
@@ -14,39 +11,10 @@ import AlertsPage from './components/Alerts/AlertsPage';
 const ENABLE_AUTH = false; // Set to true to enable login/registration forms
 
 const App: React.FC = () => {
-  const { user, profile, isLoading } = ENABLE_AUTH ? useAuth() : { user: null, profile: null, isLoading: false };
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState('dashboard');
-  const [showRegister, setShowRegister] = useState(false);
 
-  // If authentication is enabled, show loading and login forms
-  if (ENABLE_AUTH) {
-    if (isLoading) {
-      return (
-        <div className="min-h-screen bg-gradient-to-br from-dark-bg via-primary-900 to-dark-bg flex items-center justify-center">
-          <div className="text-center">
-            <div className="w-12 h-12 border-4 border-primary-500 border-t-transparent border-solid rounded-full spinner-modern mx-auto mb-6"></div>
-            <div className="modern-card p-6 max-w-md">
-              <h3 className="text-xl font-bold text-gradient mb-2">GeoGuard Initializing</h3>
-              <p className="text-dark-text-muted text-sm">Setting up your anti-theft dashboard</p>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    if (!user) {
-      return (
-        <div className="fade-in">
-          {showRegister ? (
-            <RegistrationForm onSwitchToLogin={() => setShowRegister(false)} />
-          ) : (
-            <LoginForm onSwitchToRegister={() => setShowRegister(true)} />
-          )}
-        </div>
-      );
-    }
-  }
+  // Authentication is disabled - always show main app
 
   const renderCurrentPage = () => {
     switch (currentPage) {
