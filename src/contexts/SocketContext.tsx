@@ -1,8 +1,10 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { useAuth } from './AuthContext';
 import { supabase } from '../lib/supabase';
 import { VehicleStatus, Alert, Trip } from '../types';
 import { RealtimeChannel } from '@supabase/supabase-js';
+
+// Authentication bypass flag - set to true to enable ESP32 without auth
+const BYPASS_AUTH = true;
 
 interface SocketContextType {
   connected: boolean;
@@ -39,24 +41,39 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [activeTrips, setActiveTrips] = useState<Trip[]>([]);
   const [channels, setChannels] = useState<RealtimeChannel[]>([]);
-  
-  const { user, profile } = useAuth();
 
   useEffect(() => {
-    console.log('SocketContext: User/Profile changed', { user: user?.email, profile: profile?.username });
+    console.log('SocketContext: Initializing for ESP32 (auth bypassed)');
     
-    if (user) { // Only require user, not profile
-      console.log('SocketContext: Initializing subscriptions...');
+    if (BYPASS_AUTH) {
+      // Bypass authentication - directly initialize subscriptions for ESP32
+      console.log('SocketContext: Initializing subscriptions without auth...');
       initializeRealtimeSubscriptions();
       loadInitialData();
-    } else {
-      console.log('SocketContext: Cleaning up subscriptions...');
-      // Cleanup subscriptions when user logs out
-      channels.forEach(channel => {
-        console.log('SocketContext: Removing channel', channel);
-        supabase.removeChannel(channel);
+      setConnected(true); // Force connected status for ESP32
+      
+      // Add sample ESP32 vehicle data for testing
+      setVehicleStatus({
+        'esp32-vehicle-1': {
+          vehicleId: 'esp32-vehicle-1',
+          location: {
+            lat: 13.00686617,  // Your ESP32 coordinates
+            lng: 77.52843383
+          },
+          ignitionOn: false,
+          engineLocked: false,
+          batteryLevel: 85,
+          gsmSignal: 80,
+          gpsSignal: 90,
+          isMoving: false,
+          lastUpdate: new Date(),
+          temperature: 25,
+          mileage: 15430
+        }
       });
-      setChannels([]);
+      
+    } else {
+      console.log('SocketContext: Authentication required but bypassed');
       setConnected(false);
       setVehicleStatus({});
       setAlerts([]);
@@ -69,10 +86,10 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
         supabase.removeChannel(channel);
       });
     };
-  }, [user]); // Only depend on user, not profile
+  }, []); // No dependencies - run once on mount
 
   const initializeRealtimeSubscriptions = () => {
-    if (!user) return;
+    // Removed user check for ESP32 compatibility
 
     const newChannels: RealtimeChannel[] = [];
 
@@ -98,7 +115,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
         }
       });
 
-    // Subscribe to alerts
+    // Subscribe to alerts (ESP32 - no user filtering)
     const alertsChannel = supabase
       .channel('alerts_changes')
       .on(
@@ -107,7 +124,6 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
           event: '*',
           schema: 'public',
           table: 'alerts',
-          filter: `user_id=eq.${user.id}`,
         },
         (payload) => {
           console.log('Alert update:', payload);
@@ -116,7 +132,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
       )
       .subscribe();
 
-    // Subscribe to trips
+    // Subscribe to trips (ESP32 - no user filtering)
     const tripsChannel = supabase
       .channel('trips_changes')
       .on(
@@ -125,7 +141,6 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
           event: '*',
           schema: 'public',
           table: 'trips',
-          filter: `user_id=eq.${user.id}`,
         },
         (payload) => {
           console.log('Trip update:', payload);
@@ -139,10 +154,10 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
   };
 
   const loadInitialData = async () => {
-    if (!user) return;
+    // Removed user check for ESP32 compatibility
 
     try {
-      // Load latest locations (since no vehicle_id, treat all as one vehicle)
+      // Load latest locations (ESP32 - all vehicles)
       const { data: locationsData } = await supabase
         .from('locations')
         .select('*')
@@ -197,11 +212,10 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
         setAlerts(formattedAlerts);
       }
 
-      // Load active trips
+      // Load active trips (ESP32 - all trips)
       const { data: tripsData } = await supabase
         .from('trips')
         .select('*')
-        .eq('user_id', user.id)
         .eq('status', 'active');
 
       if (tripsData) {
@@ -228,7 +242,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
   };
 
   const handleLocationUpdate = (payload: any) => {
-    const { eventType, new: newRecord, old: oldRecord } = payload;
+    const { eventType, new: newRecord } = payload; // Removed unused oldRecord
     
     if (eventType === 'INSERT' || eventType === 'UPDATE') {
       const status: VehicleStatus = {
@@ -307,14 +321,14 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
   };
 
   const sendCommand = async (vehicleId: string, command: string): Promise<boolean> => {
-    if (!user) return false;
+    // Removed user check for ESP32 compatibility
 
     try {
       const { data, error } = await supabase
         .from('remote_commands')
         .insert({
           vehicle_id: vehicleId,
-          user_id: user.id,
+          user_id: 'esp32-device', // Default user for ESP32 commands
           command: command as any,
           status: 'pending',
         })
