@@ -26,50 +26,62 @@ Icon.Default.prototype.options.iconAnchor = [12, 41];
 Icon.Default.prototype.options.popupAnchor = [1, -34];
 Icon.Default.prototype.options.shadowSize = [41, 41];
 
-// Create custom vehicle icon - Google Maps style
+// Create custom vehicle icon - Location pin style with car
 const createVehicleIcon = (isMoving: boolean, heading: number = 0) => {
-  const color = isMoving ? '#10B981' : '#6B7280';
+  const pinColor = isMoving ? '#10B981' : '#6B7280';
   const shadowColor = isMoving ? 'rgba(16, 185, 129, 0.3)' : 'rgba(107, 114, 128, 0.3)';
   
   const svgIcon = `
-    <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <ellipse cx="20" cy="35" rx="15" ry="3" fill="${shadowColor}"/>
-      <circle cx="20" cy="20" r="18" fill="white" stroke="${color}" stroke-width="2" opacity="0.95"/>
-      <g transform="rotate(${heading} 20 20)">
-        <rect x="14" y="12" width="12" height="16" rx="2" ry="2" 
-              fill="${color}" stroke="rgba(0,0,0,0.1)" stroke-width="0.5"/>
-        <path d="M18 12 L22 12 L24 8 L16 8 Z" 
-              fill="${color}" opacity="0.9"/>
-        <rect x="15" y="14" width="10" height="10" rx="1" ry="1" 
-              fill="${color}" opacity="0.8"/>
-        <rect x="16" y="13" width="8" height="2" rx="1" ry="1" 
-              fill="rgba(255,255,255,0.4)"/>
-        <rect x="16" y="25" width="8" height="2" rx="1" ry="1" 
-              fill="rgba(255,255,255,0.4)"/>
-        <rect x="15.5" y="16" width="2" height="6" rx="0.5" ry="0.5" 
-              fill="rgba(255,255,255,0.3)"/>
-        <rect x="22.5" y="16" width="2" height="6" rx="0.5" ry="0.5" 
-              fill="rgba(255,255,255,0.3)"/>
-        <circle cx="16" cy="14" r="1.5" fill="#333"/>
-        <circle cx="24" cy="14" r="1.5" fill="#333"/>
-        <circle cx="16" cy="26" r="1.5" fill="#333"/>
-        <circle cx="24" cy="26" r="1.5" fill="#333"/>
-        <circle cx="20" cy="20" r="2" fill="${isMoving ? '#EF4444' : '#9CA3AF'}" opacity="0.8"/>
+    <svg width="50" height="60" viewBox="0 0 50 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- Drop shadow -->
+      <ellipse cx="25" cy="55" rx="12" ry="3" fill="${shadowColor}"/>
+      
+      <!-- Location pin outer shape -->
+      <path d="M25 5 C35 5, 43 13, 43 23 C43 33, 25 50, 25 50 C25 50, 7 33, 7 23 C7 13, 15 5, 25 5 Z" 
+            fill="${pinColor}" stroke="rgba(0,0,0,0.1)" stroke-width="1"/>
+      
+      <!-- White inner circle for car -->
+      <circle cx="25" cy="23" r="15" fill="white" stroke="rgba(0,0,0,0.1)" stroke-width="0.5"/>
+      
+      <!-- Car icon inside the pin -->
+      <g transform="translate(25, 23) rotate(${heading}) translate(-25, -23)">
+        <!-- Car body -->
+        <path d="M15 18 L35 18 L35 28 L15 28 Z" fill="${pinColor}" rx="2"/>
+        
+        <!-- Car roof -->
+        <path d="M18 18 L32 18 L30 14 L20 14 Z" fill="${pinColor}" opacity="0.8"/>
+        
+        <!-- Car windows -->
+        <rect x="19" y="15" width="12" height="2" fill="rgba(255,255,255,0.7)" rx="1"/>
+        <rect x="17" y="19" width="3" height="2" fill="rgba(255,255,255,0.5)" rx="0.5"/>
+        <rect x="30" y="19" width="3" height="2" fill="rgba(255,255,255,0.5)" rx="0.5"/>
+        
+        <!-- Car wheels -->
+        <circle cx="19" cy="28" r="2" fill="#333" stroke="white" stroke-width="0.5"/>
+        <circle cx="31" cy="28" r="2" fill="#333" stroke="white" stroke-width="0.5"/>
+        
+        <!-- Center indicator dot -->
+        <circle cx="25" cy="23" r="1.5" fill="${isMoving ? '#EF4444' : '#9CA3AF'}" opacity="0.9"/>
       </g>
+      
+      <!-- Moving animation ring -->
       ${isMoving ? `
-        <circle cx="20" cy="20" r="18" fill="none" stroke="${color}" stroke-width="1" opacity="0.5">
-          <animate attributeName="r" values="18;22;18" dur="2s" repeatCount="indefinite"/>
-          <animate attributeName="opacity" values="0.5;0;0.5" dur="2s" repeatCount="indefinite"/>
+        <circle cx="25" cy="23" r="15" fill="none" stroke="${pinColor}" stroke-width="1" opacity="0.4">
+          <animate attributeName="r" values="15;20;15" dur="2s" repeatCount="indefinite"/>
+          <animate attributeName="opacity" values="0.4;0;0.4" dur="2s" repeatCount="indefinite"/>
         </circle>
       ` : ''}
+      
+      <!-- Subtle smile curve at bottom of pin -->
+      <path d="M20 28 Q25 32 30 28" stroke="rgba(255,255,255,0.3)" stroke-width="1" fill="none"/>
     </svg>
   `;
   
   return new Icon({
     iconUrl: 'data:image/svg+xml;base64,' + btoa(svgIcon),
-    iconSize: [40, 40],
-    iconAnchor: [20, 20],
-    popupAnchor: [0, -20],
+    iconSize: [50, 60],
+    iconAnchor: [25, 50], // Pin point at bottom
+    popupAnchor: [0, -50], // Popup above the pin
     className: isMoving ? 'vehicle-icon-moving' : 'vehicle-icon-stopped'
   });
 };
@@ -126,9 +138,9 @@ export default function LiveMap() {
   };
 
   const getVehicleStatus = (vehicle: any) => {
-    const isMoving = vehicle?.speed > 0 || vehicle?.isMoving || false;
-    const ignitionOn = vehicle?.ignitionOn || vehicle?.engine || false;
     const speed = vehicle?.speed || 0;
+    const isMoving = speed > 10; // Only show moving when speed > 10 km/h
+    const ignitionOn = vehicle?.ignitionOn || vehicle?.engine || false;
     const battery = vehicle?.battery || 0;
     const coords = getVehicleCoordinates(vehicle);
     
@@ -194,8 +206,8 @@ export default function LiveMap() {
         </div>
       </div>
 
-      {/* Navigation Panel - Mobile responsive positioning */}
-      <div className="absolute top-20 sm:top-4 left-4 z-[1000]">
+      {/* Navigation Panel - Bottom positioning for mobile */}
+      <div className="absolute bottom-4 left-4 z-[1000]">
         {/* Navigation Controls */}
         <div className="bg-white rounded-lg shadow-lg p-3 space-y-2 max-w-[200px]">
           <div className="text-xs text-gray-500 mb-2">Navigation Controls</div>
