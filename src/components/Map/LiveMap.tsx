@@ -194,10 +194,10 @@ export default function LiveMap() {
         </div>
       </div>
 
-      {/* Navigation Panel */}
-      <div className="absolute top-4 left-4 z-[1000]">
+      {/* Navigation Panel - Mobile responsive positioning */}
+      <div className="absolute top-20 sm:top-4 left-4 z-[1000]">
         {/* Navigation Controls */}
-        <div className="bg-white rounded-lg shadow-lg p-3 space-y-2">
+        <div className="bg-white rounded-lg shadow-lg p-3 space-y-2 max-w-[200px]">
           <div className="text-xs text-gray-500 mb-2">Navigation Controls</div>
           
           <button
