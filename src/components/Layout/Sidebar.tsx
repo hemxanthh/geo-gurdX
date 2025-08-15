@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Home, Map, Navigation, Zap, AlertTriangle } from 'lucide-react';
+import { X, Home, Map, Navigation, Zap, AlertTriangle, Car } from 'lucide-react';
 import { clsx } from 'clsx';
 
 interface SidebarProps {
@@ -37,6 +37,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentPage, onPageC
       description: 'Security & System Alerts',
       gradient: 'from-red-500 to-orange-500',
       badge: unreadAlerts
+    },
+    { 
+      id: 'fleet-control', 
+      label: 'Fleet Control Centre', 
+      icon: Car, 
+      description: 'Rental Vehicle Management',
+      gradient: 'from-purple-500 to-indigo-600'
     },
   ];
 
@@ -111,7 +118,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentPage, onPageC
                       : 'bg-slate-200 group-hover:scale-110'
                   )}>
                     <Icon className="w-5 h-5 text-slate-900" />
-                    {item.badge > 0 && (
+                    {item.badge && item.badge > 0 && (
                       <span className="absolute -top-2 -right-2 bg-accent-orange text-white text-xs font-bold px-2 py-0.5 rounded-full shadow-lg">
                         {item.badge}
                       </span>

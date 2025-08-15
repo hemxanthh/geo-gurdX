@@ -6,6 +6,7 @@ import Dashboard from './components/Dashboard/Dashboard';
 import LiveMap from './components/Map/LiveMap';
 import Settings from './components/Settings/Settings';
 import AlertsPage from './components/Alerts/AlertsPage';
+import FleetControlCentre from './components/Fleet/FleetControlCentre';
 
 // Toggle this to enable/disable authentication
 const ENABLE_AUTH = false; // Set to true to enable login/registration forms
@@ -26,6 +27,8 @@ const App: React.FC = () => {
         return <Settings />;
       case 'alerts':
         return <AlertsPage />;
+      case 'fleet-control':
+        return <FleetControlCentre />;
       default:
         return <Dashboard onNavigateToMap={() => setCurrentPage('live-map')} />;
     }
